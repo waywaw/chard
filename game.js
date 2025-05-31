@@ -14,7 +14,7 @@ window.addEventListener('resize', () => {
 });
 
 // Version display
-const version = "v1.3.2";
+const version = "v1.3.3";
 
 // Load Images
 const loadImage = (src) => {
@@ -317,13 +317,13 @@ function update() {
     }
 
     spawnTimer++;
-    if (spawnTimer % 30 === 0) {
-        if (Math.random() < 0.7) {
+    if (spawnTimer % 5 === 0) {
+        spawnObstacle(); // Less frequent junk food
+    } else {
+        if (Math.random() < 0.8) {
             spawnCollectible();
-        } else if (Math.random() < 0.2) {
-            spawnPowerUp();
         } else {
-            spawnObstacle();
+            spawnPowerUp();
         }
     }
 
