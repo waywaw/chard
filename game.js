@@ -1,4 +1,4 @@
-// Chard Runner 2.0 - Build v2.0.0
+// Chard Runner 2.1 - Build v2.1.0
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
@@ -60,29 +60,6 @@ const collectibles = [
     loadImage('assets/broccoli.svg')
 ];
 
-const powerups = [
-    loadImage('assets/golden_carrot.svg')
-];
-
-// Motivational Quotes
-const quotes = [
-    "You can do it! – Richard Simmons",
-    "Sweat and Smile!",
-    "Every step counts!",
-    "Eat clean, stay fit!",
-    "One more carrot, one less worry!",
-    "Fuel your greatness!",
-    "Be stronger than your excuses!",
-    "Health is wealth!",
-    "Vegetables are victory!",
-    "Small steps, big change!",
-    "Make yourself proud!",
-    "Celebrate progress!",
-    "More veggies, more victories!",
-    "Healthy hustle!",
-    "Run like you mean it!",
-];
-
 // Background Palettes
 const palettes = [
     ['#FF7F50', '#FFD700', '#FF6347', '#CD5C5C'],
@@ -99,7 +76,7 @@ function randomizePalette() {
     currentPalette = palettes[randomIndex];
 }
 
-// Dynamic Background Drawing
+// Dynamic Background
 function drawDynamicBackground(offset) {
     ctx.save();
     ctx.fillStyle = '#FFE4B5';
@@ -153,9 +130,9 @@ function drawDynamicBackground(offset) {
 }
 
 let backgroundX = 0;
-let baseBackgroundSpeed = 4; // Slower start
+let baseBackgroundSpeed = 4;
 let backgroundSpeed = baseBackgroundSpeed;
-let playerSpeed = 1.5; // Slower start
+let playerSpeed = 1.5;
 
 const player = {
     x: 50,
@@ -164,9 +141,10 @@ const player = {
     height: 200,
     vy: 0,
     gravity: 1.2,
-    jumpPower: -18,
+    jumpPowerBase: -22,
+    jumpPowerBoost: -26,
     jumpCount: 0,
-    maxJumps: 3,
+    maxJumps: 2,
     frameIndex: 0,
     frameSpeed: 5,
     frameCounter: 0,
@@ -182,17 +160,8 @@ let motivationalText = "";
 let motivationalTimer = 0;
 let startText = "";
 
-let comboCount = 0;
-let rainbowMode = false;
-let rainbowTimer = 0;
-let magnetMode = false;
-let magnetTimer = 0;
-let speedBoostMode = false;
-let speedBoostTimer = 0;
-
-let gameOver = false;
 let highScore = localStorage.getItem('highScore') || 0;
-let victoryAchieved = false;
+let gameOver = false;
 
 function randomStartText() {
     const starts = [
@@ -214,8 +183,8 @@ function spawnObstacle() {
         img: obstacles[Math.floor(Math.random() * obstacles.length)],
         x: width,
         y: Math.random() * (height - 200) + 200,
-        width: Math.floor(Math.random() * 20) + 80,
-        height: Math.floor(Math.random() * 20) + 80,
+        width: 100,
+        height: 100,
         speed: 6
     };
     gameObjects.push(obs);
@@ -227,8 +196,8 @@ function spawnCollectible() {
         img: collectibles[Math.floor(Math.random() * collectibles.length)],
         x: width,
         y: Math.random() * (height - 200) + 200,
-        width: Math.floor(Math.random() * 20) + 80,
-        height: Math.floor(Math.random() * 20) + 80,
+        width: 80,
+        height: 80,
         speed: 5
     };
     gameObjects.push(col);
@@ -236,7 +205,11 @@ function spawnCollectible() {
 
 function jump() {
     if (gameStarted && !gameOver && player.jumpCount < player.maxJumps) {
-        player.vy = player.jumpPower;
+        if (player.jumpCount === 0) {
+            player.vy = player.jumpPowerBase;
+        } else {
+            player.vy = player.jumpPowerBoost;
+        }
         player.jumpCount++;
         playSound(jumpSound);
     }
@@ -272,45 +245,12 @@ function restartGame() {
     score = 0;
     veggiesCollected = 0;
     spawnTimer = 0;
-    comboCount = 0;
-    rainbowMode = false;
-    rainbowTimer = 0;
-    magnetMode = false;
-    magnetTimer = 0;
-    speedBoostMode = false;
-    speedBoostTimer = 0;
     gameObjects = [];
     gameOver = false;
-    victoryAchieved = false;
     randomStartText();
     randomizePalette();
     gameStarted = false;
 }
-
-document.addEventListener('keydown', (e) => {
-    if (e.code === 'ArrowDown') crouchDown();
-    if (e.code === 'Space') startGame();
-});
-
-document.addEventListener('keyup', (e) => {
-    if (e.code === 'ArrowDown') standUp();
-});
-
-canvas.addEventListener('touchstart', (e) => {
-    crouchDown();
-});
-
-canvas.addEventListener('touchend', (e) => {
-    standUp();
-});
-
-document.addEventListener('mousedown', () => {
-    crouchDown();
-});
-
-document.addEventListener('mouseup', () => {
-    standUp();
-});
 
 function detectCollision(a, b) {
     return a.x < b.x + b.width &&
@@ -350,12 +290,18 @@ function update() {
                 gameObjects.splice(i, 1);
                 veggiesCollected++;
                 score += 10;
-                playSound(collectSound);
+                backgroundSpeed += 0.2;
+                playerSpeed += 0.1;
                 if (veggiesCollected % 5 === 0) randomizePalette();
+                if (score > highScore) {
+                    highScore = score;
+                    localStorage.setItem('highScore', highScore);
+                }
+                playSound(collectSound);
             } else if (obj.type === "obstacle") {
                 gameObjects.splice(i, 1);
-                comboCount = 0;
-                rainbowMode = false;
+                backgroundSpeed = Math.max(2, backgroundSpeed - 0.5);
+                playerSpeed = Math.max(1, playerSpeed - 0.3);
                 score = Math.max(0, score - 5);
                 playSound(splatSound);
                 if (score <= 0) triggerGameOver();
@@ -373,10 +319,7 @@ function update() {
 function triggerGameOver() {
     gameOver = true;
     playSound(gameOverSound);
-    if (score > highScore) {
-        highScore = score;
-        localStorage.setItem('highScore', highScore);
-    }
+    localStorage.setItem('highScore', highScore);
 }
 
 function draw() {
@@ -397,9 +340,16 @@ function draw() {
     }
 
     let playerImage = playerRunFrames[player.frameIndex];
+    let pWidth = player.width;
+    let pHeight = player.height;
+    let pX = player.x;
+    let pY = player.y;
 
     if (player.crouching) {
         playerImage = playerJumpStart;
+        pWidth = player.width / 2;
+        pHeight = player.height / 2;
+        pY = player.y + player.height / 2;
     } else if (player.vy < 0) {
         playerImage = playerJumpMid;
     } else if (player.vy > 0 && player.jumpCount > 0) {
@@ -412,7 +362,7 @@ function draw() {
         }
     }
 
-    ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
+    ctx.drawImage(playerImage, pX, pY, pWidth, pHeight);
 
     gameObjects.forEach(obj => {
         ctx.drawImage(obj.img, obj.x, obj.y, obj.width, obj.height);
@@ -425,10 +375,22 @@ function draw() {
     ctx.fillText('High Score: ' + highScore, width / 2, 70);
 }
 
+// Mobile Safe Game Loop Start
+let gameLoopStarted = false;
+
+function startGameLoop() {
+    if (!gameLoopStarted) {
+        gameLoopStarted = true;
+        gameLoop();
+    }
+}
+
+document.addEventListener('touchstart', startGameLoop, { once: true });
+document.addEventListener('mousedown', startGameLoop, { once: true });
+document.addEventListener('keydown', startGameLoop, { once: true });
+
 function gameLoop() {
     update();
     draw();
     requestAnimationFrame(gameLoop);
 }
-
-gameLoop();
