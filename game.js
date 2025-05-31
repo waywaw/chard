@@ -13,8 +13,8 @@ window.addEventListener('resize', () => {
     canvas.height = height;
 });
 
-// Version display
-const version = "v1.3.8";
+// Version
+const version = "v1.4.0";
 
 // Load Images
 const loadImage = (src) => {
@@ -97,9 +97,13 @@ const player = {
 };
 
 let gameObjects = [];
+let trampolines = [];
+let platforms = [];
 
 let gameStarted = false;
 let spawnTimer = 0;
+let trampolineTimer = 0;
+let platformTimer = 0;
 let score = 0;
 let scoreTimer = 0;
 
@@ -136,11 +140,9 @@ function randomStartText() {
 
 randomStartText();
 
-// ✅ Fix spawn Y to be waist height and higher
+// New random Y position for spawns (top 80%)
 function getSpawnY() {
-    // Top half of the screen, not too low
-    const waistLevel = height / 2 - 100; // Upper 50% of screen
-    return Math.random() * (waistLevel - 100);
+    return Math.random() * (height * 0.8 - 100);
 }
 
 function spawnObstacle() {
@@ -182,6 +184,26 @@ function spawnPowerUp() {
     gameObjects.push(pow);
 }
 
+function spawnTrampoline() {
+    trampolines.push({
+        x: width,
+        y: height - 100,
+        width: 100,
+        height: 20,
+        speed: 6
+    });
+}
+
+function spawnPlatform() {
+    platforms.push({
+        x: width,
+        y: Math.random() * (height * 0.7),
+        width: 80 + Math.random() * 100,
+        height: 20 + Math.random() * 20,
+        speed: 6
+    });
+}
+
 function jump() {
     if (gameStarted && !gameOver && player.jumpCount < player.maxJumps) {
         player.vy = player.jumpPower;
@@ -205,6 +227,8 @@ function restartGame() {
     score = 0;
     scoreTimer = 0;
     spawnTimer = 0;
+    trampolineTimer = 0;
+    platformTimer = 0;
     comboCount = 0;
     rainbowMode = false;
     rainbowTimer = 0;
@@ -213,6 +237,8 @@ function restartGame() {
     speedBoostMode = false;
     speedBoostTimer = 0;
     gameObjects = [];
+    trampolines = [];
+    platforms = [];
     gameOver = false;
     victoryAchieved = false;
     randomStartText();
@@ -244,6 +270,38 @@ function detectCollision(a, b) {
            a.y + a.height > b.y;
 }
 
+function checkTrampolineCollision() {
+    for (let tramp of trampolines) {
+        if (
+            player.vy > 0 &&
+            player.x + player.width > tramp.x &&
+            player.x < tramp.x + tramp.width &&
+            player.y + player.height <= tramp.y + 10 &&
+            player.y + player.height + player.vy >= tramp.y
+        ) {
+            player.y = tramp.y - player.height;
+            player.vy = player.jumpPower * 2; // Big bounce
+            player.jumpCount = 0;
+        }
+    }
+}
+
+function checkPlatformCollision() {
+    for (let plat of platforms) {
+        if (
+            player.vy > 0 &&
+            player.x + player.width > plat.x &&
+            player.x < plat.x + plat.width &&
+            player.y + player.height <= plat.y + 10 &&
+            player.y + player.height + player.vy >= plat.y
+        ) {
+            player.y = plat.y - player.height;
+            player.vy = 0;
+            player.jumpCount = 0;
+        }
+    }
+}
+
 function update() {
     if (!gameStarted || gameOver) return;
 
@@ -261,12 +319,25 @@ function update() {
         player.jumpCount = 0;
     }
 
+    checkTrampolineCollision();
+    checkPlatformCollision();
+
     gameObjects.forEach(obj => {
         obj.x -= obj.speed;
     });
 
-    // ✅ Memory Cleanup — remove objects that are offscreen left
+    trampolines.forEach(tramp => {
+        tramp.x -= backgroundSpeed;
+    });
+
+    platforms.forEach(plat => {
+        plat.x -= backgroundSpeed;
+    });
+
+    // Memory Cleanup
     gameObjects = gameObjects.filter(obj => obj.x + obj.width > 0);
+    trampolines = trampolines.filter(tramp => tramp.x + tramp.width > 0);
+    platforms = platforms.filter(plat => plat.x + plat.width > 0);
 
     for (let i = gameObjects.length - 1; i >= 0; i--) {
         const obj = gameObjects[i];
@@ -325,6 +396,16 @@ function update() {
         } else {
             spawnObstacle();
         }
+    }
+
+    trampolineTimer++;
+    if (trampolineTimer % 300 === 0) {
+        spawnTrampoline();
+    }
+
+    platformTimer++;
+    if (platformTimer % 200 === 0) {
+        spawnPlatform();
     }
 
     if (rainbowMode) {
@@ -408,6 +489,16 @@ function draw() {
         ctx.fillText('Tap to Start', width / 2, height / 2 + 150);
         return;
     }
+
+    trampolines.forEach(tramp => {
+        ctx.fillStyle = 'blue';
+        ctx.fillRect(tramp.x, tramp.y, tramp.width, tramp.height);
+    });
+
+    platforms.forEach(plat => {
+        ctx.fillStyle = 'gray';
+        ctx.fillRect(plat.x, plat.y, plat.width, plat.height);
+    });
 
     let playerImage;
     if (player.vy < 0) {
