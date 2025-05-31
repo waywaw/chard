@@ -48,6 +48,9 @@ const bossFoods = [
 
 const backgroundStartImage = loadImage('assets/background.svg');
 
+// 🔊 Start Sound
+const startSound = new Audio('assets/start.mp3');
+
 // 📝 Infinite Motivational Quote Generator
 function generateMotivationalQuote() {
     const verbs = ["Run", "Push", "Jump", "Reach", "Stretch", "Lift", "Dream", "Hustle", "Move", "Shine", "Grow", "Thrive"];
@@ -176,6 +179,7 @@ function jump() {
 function startGame() {
     if (!gameStarted) {
         gameStarted = true;
+        startSound.play(); // 🔊 Play start sound
     } else if (gameOver) {
         restartGame();
     } else {
@@ -267,7 +271,6 @@ function update() {
             currentLevel++;
             backgroundColor = randomHexColor();
             bossFood = null;
-            // Gradually speed up player animation on level up
             if (player.frameSpeed > 4) {
                 player.frameSpeed -= 0.2;
             }
@@ -284,10 +287,10 @@ function update() {
                 gameObjects.splice(i, 1);
                 comboCount++;
                 score += 10;
-                motivationalText = generateMotivationalQuote(); // 🔥 Infinite quotes
+                motivationalText = generateMotivationalQuote();
                 motivationalTimer = 120;
-                backgroundSpeed += 0.05; // Slower increase
-                playerSpeed += 0.05;     // Slower increase
+                backgroundSpeed += 0.05;
+                playerSpeed += 0.05;
             }
         }
     }
@@ -339,7 +342,7 @@ function draw() {
 
     ctx.fillStyle = 'black';
     ctx.font = 'bold 16px sans-serif';
-    ctx.fillText("v1.5.4", width - 80, height - 20);
+    ctx.fillText("v1.5.5", width - 80, height - 20);
 
     if (!gameStarted) {
         ctx.fillStyle = 'black';
