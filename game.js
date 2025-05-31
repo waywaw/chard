@@ -35,19 +35,9 @@ const playerJumpFall = loadImage('assets/jump_fall.svg');
 
 const playerIdle = loadImage('assets/chard2.svg');
 
-const obstacles = [
-    loadImage('assets/burger.svg'),
-    loadImage('assets/pizza.svg'),
-    loadImage('assets/donut.svg')
-];
-
 const collectibles = [
     loadImage('assets/carrot.svg'),
     loadImage('assets/broccoli.svg')
-];
-
-const powerups = [
-    loadImage('assets/golden_carrot.svg')
 ];
 
 const quotes = [
@@ -73,7 +63,6 @@ const backgroundColor = "#f0f8ff";
 let backgroundX = 0;
 let backgroundSpeed = 6;
 let playerSpeed = 2.5;
-const minSpeed = 4;
 
 const player = {
     x: 50,
@@ -106,7 +95,6 @@ let startText = "";
 let comboCount = 0;
 let gameOver = false;
 let highScore = localStorage.getItem('highScore') || 0;
-let victoryAchieved = false;
 
 function randomStartText() {
     const starts = [
@@ -123,19 +111,6 @@ function randomStartText() {
 
 randomStartText();
 
-function spawnObstacle() {
-    const obs = {
-        type: "obstacle",
-        img: obstacles[Math.floor(Math.random() * obstacles.length)],
-        x: width,
-        y: Math.random() * (height - 250) + 200,
-        width: 80 + Math.random() * 20,
-        height: 80 + Math.random() * 20,
-        speed: 6
-    };
-    gameObjects.push(obs);
-}
-
 function spawnCollectible() {
     const col = {
         type: "collectible",
@@ -147,19 +122,6 @@ function spawnCollectible() {
         speed: 5
     };
     gameObjects.push(col);
-}
-
-function spawnPowerUp() {
-    const pow = {
-        type: "powerup",
-        img: powerups[0],
-        x: width,
-        y: Math.random() * (height - 250) + 200,
-        width: 60,
-        height: 60,
-        speed: 5
-    };
-    gameObjects.push(pow);
 }
 
 function spawnTrampoline() {
@@ -202,7 +164,6 @@ function restartGame() {
     gameObjects = [];
     trampolines = [];
     gameOver = false;
-    victoryAchieved = false;
     randomStartText();
     gameStarted = false;
 }
@@ -277,33 +238,17 @@ function update() {
                 motivationalTimer = 120;
                 backgroundSpeed += 0.5;
                 playerSpeed += 0.3;
-            } else if (obj.type === "obstacle") {
-                gameObjects.splice(i, 1);
-                comboCount = 0;
-                score = Math.max(0, score - 5);
-                backgroundSpeed -= 1;
-                playerSpeed -= 0.5;
-                if (backgroundSpeed < minSpeed) {
-                    triggerGameOver();
-                }
-            } else if (obj.type === "powerup") {
-                gameObjects.splice(i, 1);
             }
         }
     }
 
+    // Clean up off-screen objects
     gameObjects = gameObjects.filter(obj => obj.x + obj.width > 0);
     trampolines = trampolines.filter(tramp => tramp.x + tramp.width > 0);
 
     spawnTimer++;
     if (spawnTimer % 50 === 0) {
-        if (Math.random() < 0.7) {
-            spawnCollectible();
-        } else if (Math.random() < 0.2) {
-            spawnPowerUp();
-        } else {
-            spawnObstacle();
-        }
+        spawnCollectible();
     }
 
     trampolineTimer++;
@@ -327,9 +272,6 @@ function triggerGameOver() {
         highScore = score;
         localStorage.setItem('highScore', highScore);
     }
-    if (score >= 1000) {
-        victoryAchieved = true;
-    }
 }
 
 function draw() {
@@ -340,7 +282,7 @@ function draw() {
 
     ctx.fillStyle = 'black';
     ctx.font = 'bold 16px sans-serif';
-    ctx.fillText("v1.4.3", width - 80, height - 20);
+    ctx.fillText("v1.4.4", width - 80, height - 20);
 
     if (!gameStarted) {
         ctx.fillStyle = 'black';
