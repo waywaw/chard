@@ -48,23 +48,28 @@ const bossFoods = [
 
 const backgroundStartImage = loadImage('assets/background.svg');
 
-const quotes = [
-    "Keep going!",
-    "Every step counts.",
-    "Eat clean, stay strong.",
-    "Fuel your greatness.",
-    "One more carrot!",
-    "Be stronger than yesterday.",
-    "Health is wealth.",
-    "Small steps, big change.",
-    "Make yourself proud.",
-    "Celebrate progress.",
-    "More veggies, more victories.",
-    "Stay focused, stay fit.",
-    "Run toward your best self.",
-    "You got this!",
-    "Victory loves preparation."
-];
+// 📝 Infinite Motivational Quote Generator
+function generateMotivationalQuote() {
+    const verbs = ["Run", "Push", "Jump", "Reach", "Stretch", "Lift", "Dream", "Hustle", "Move", "Shine", "Grow", "Thrive"];
+    const goals = ["health", "greatness", "tomorrow", "today", "happiness", "strength", "balance", "clarity"];
+    const endings = [
+        "every step counts.",
+        "you're unstoppable.",
+        "one breath at a time.",
+        "small victories build empires.",
+        "your best is yet to come.",
+        "fuel your fire.",
+        "make it happen.",
+        "believe and achieve.",
+        "no limits, only milestones."
+    ];
+
+    const verb = verbs[Math.floor(Math.random() * verbs.length)];
+    const goal = goals[Math.floor(Math.random() * goals.length)];
+    const ending = endings[Math.floor(Math.random() * endings.length)];
+
+    return `${verb} toward ${goal}, ${ending}`;
+}
 
 // Random HEX color generator
 function randomHexColor() {
@@ -88,7 +93,7 @@ const player = {
     jumpCount: 0,
     maxJumps: 3,
     frameIndex: 0,
-    frameSpeed: 12, // Start very slow
+    frameSpeed: 12, // Start slow
     frameCounter: 0,
 };
 
@@ -114,7 +119,6 @@ let highScore = localStorage.getItem('highScore') || 0;
 function randomStartText() {
     const starts = [
         "Run for your health.",
-        "Lower blood pressure.",
         "Lower cholesterol.",
         "Stay alive. The run never ends.",
         "Each step is a win.",
@@ -280,7 +284,7 @@ function update() {
                 gameObjects.splice(i, 1);
                 comboCount++;
                 score += 10;
-                motivationalText = quotes[Math.floor(Math.random() * quotes.length)];
+                motivationalText = generateMotivationalQuote(); // 🔥 Infinite quotes
                 motivationalTimer = 120;
                 backgroundSpeed += 0.05; // Slower increase
                 playerSpeed += 0.05;     // Slower increase
@@ -327,7 +331,7 @@ function draw() {
     ctx.clearRect(0, 0, width, height);
 
     if (!gameStarted) {
-        ctx.drawImage(backgroundStartImage, 0, 0, width, height); // 🌄 Landing background
+        ctx.drawImage(backgroundStartImage, 0, 0, width, height);
     } else {
         ctx.fillStyle = backgroundColor;
         ctx.fillRect(0, 0, width, height);
@@ -335,7 +339,7 @@ function draw() {
 
     ctx.fillStyle = 'black';
     ctx.font = 'bold 16px sans-serif';
-    ctx.fillText("v1.5.3", width - 80, height - 20);
+    ctx.fillText("v1.5.4", width - 80, height - 20);
 
     if (!gameStarted) {
         ctx.fillStyle = 'black';
