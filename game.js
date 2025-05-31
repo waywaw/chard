@@ -61,6 +61,8 @@ const powerups = [
     loadImage('assets/golden_carrot.svg')
 ];
 
+const backgroundImage = loadImage('assets/background.svg');
+
 const quotes = [
     "You can do it! – Richard Simmons",
     "Sweat and Smile!",
@@ -387,8 +389,8 @@ function draw() {
     if (rainbowMode) {
         drawRainbowBackground();
     } else {
-        ctx.fillStyle = '#FFE4B5'; // Stable solid background
-        ctx.fillRect(0, 0, width, height);
+        ctx.drawImage(backgroundImage, backgroundX, 0, width, height);
+        ctx.drawImage(backgroundImage, backgroundX + width, 0, width, height);
     }
 
     if (!gameStarted) {
