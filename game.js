@@ -1,4 +1,5 @@
-// Chard Runner 2.0.1 - Mobile Friendly Build
+
+// Chard Runner 2.0.2 - Super Clean Mobile/Desktop Start
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
@@ -359,7 +360,7 @@ function draw() {
     ctx.fillText('High Score: ' + highScore, width / 2, 70);
 }
 
-// --- Mobile/Desktop Safe Start ---
+// --- Mobile/Desktop Start Events ---
 let gameLoopStarted = false;
 
 function startGameLoop() {
@@ -369,11 +370,8 @@ function startGameLoop() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    ['click', 'touchend', 'keydown', 'mousedown'].forEach(event => {
-        document.addEventListener(event, startGameLoop, { once: true });
-    });
-});
+window.addEventListener('touchend', startGameLoop, { once: true });
+window.addEventListener('click', startGameLoop, { once: true });
 
 function gameLoop() {
     update();
