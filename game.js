@@ -1,5 +1,4 @@
-
-// Chard Runner 2.3.1 - Stable Final
+// Chard Runner 2.1 - Build v2.1.0
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
@@ -16,12 +15,14 @@ window.addEventListener('resize', () => {
     canvas.height = height;
 });
 
+// Load Images
 const loadImage = (src) => {
     const img = new Image();
     img.src = src;
     return img;
 };
 
+// Sounds
 const jumpSound = new Audio('assets/jump.mp3');
 const collectSound = new Audio('assets/collect.mp3');
 const splatSound = new Audio('assets/splat.mp3');
@@ -33,6 +34,7 @@ function playSound(sound) {
     clone.play();
 }
 
+// Player Sprites
 const playerRunFrames = [
     loadImage('assets/run1.svg'),
     loadImage('assets/run2.svg'),
@@ -46,6 +48,7 @@ const playerJumpMid = loadImage('assets/jump_mid.svg');
 const playerJumpFall = loadImage('assets/jump_fall.svg');
 const playerIdle = loadImage('assets/chard2.svg');
 
+// Obstacles and Collectibles
 const obstacles = [
     loadImage('assets/burger.svg'),
     loadImage('assets/pizza.svg'),
@@ -57,8 +60,7 @@ const collectibles = [
     loadImage('assets/broccoli.svg')
 ];
 
-const veggieColors = ['#FFA500', '#32CD32', '#FFD700']; // orange, green, gold
-
+// Background Palettes
 const palettes = [
     ['#FF7F50', '#FFD700', '#FF6347', '#CD5C5C'],
     ['#00CED1', '#4682B4', '#5F9EA0', '#6495ED'],
@@ -74,6 +76,7 @@ function randomizePalette() {
     currentPalette = palettes[randomIndex];
 }
 
+// Dynamic Background
 function drawDynamicBackground(offset) {
     ctx.save();
     ctx.fillStyle = '#FFE4B5';
@@ -149,11 +152,14 @@ const player = {
 };
 
 let gameObjects = [];
-let particles = [];
 let gameStarted = false;
 let spawnTimer = 0;
 let score = 0;
 let veggiesCollected = 0;
+let motivationalText = "";
+let motivationalTimer = 0;
+let startText = "";
+
 let highScore = localStorage.getItem('highScore') || 0;
 let gameOver = false;
 
@@ -167,10 +173,9 @@ function randomStartText() {
         "Healthy life, happy life.",
         "Run toward your best self."
     ];
-    return starts[Math.floor(Math.random() * starts.length)];
+    startText = starts[Math.floor(Math.random() * starts.length)];
 }
-
-let startText = randomStartText();
+randomStartText();
 
 function spawnObstacle() {
     const obs = {
@@ -198,26 +203,15 @@ function spawnCollectible() {
     gameObjects.push(col);
 }
 
-function spawnParticles(x, y) {
-    for (let i = 0; i < 15; i++) {
-        particles.push({
-            x: x + player.width / 2,
-            y: y + player.height,
-            radius: Math.random() * 4 + 2,
-            speedX: (Math.random() - 0.5) * 2,
-            speedY: Math.random() * -2 - 1,
-            opacity: 1,
-            color: veggieColors[Math.floor(Math.random() * veggieColors.length)]
-        });
-    }
-}
-
 function jump() {
     if (gameStarted && !gameOver && player.jumpCount < player.maxJumps) {
-        player.vy = player.jumpCount === 0 ? player.jumpPowerBase : player.jumpPowerBoost;
+        if (player.jumpCount === 0) {
+            player.vy = player.jumpPowerBase;
+        } else {
+            player.vy = player.jumpPowerBoost;
+        }
         player.jumpCount++;
         playSound(jumpSound);
-        spawnParticles(player.x, player.y);
     }
 }
 
@@ -252,9 +246,8 @@ function restartGame() {
     veggiesCollected = 0;
     spawnTimer = 0;
     gameObjects = [];
-    particles = [];
     gameOver = false;
-    startText = randomStartText();
+    randomStartText();
     randomizePalette();
     gameStarted = false;
 }
@@ -270,7 +263,9 @@ function update() {
     if (!gameStarted || gameOver) return;
 
     backgroundX -= backgroundSpeed;
-    if (backgroundX <= -width) backgroundX = 0;
+    if (backgroundX <= -width) {
+        backgroundX = 0;
+    }
 
     player.vy += player.gravity;
     player.y += player.vy;
@@ -284,16 +279,6 @@ function update() {
     gameObjects.forEach(obj => {
         obj.x -= backgroundSpeed * (obj.type === 'obstacle' ? 1.2 : 1);
     });
-
-    for (let i = particles.length - 1; i >= 0; i--) {
-        let p = particles[i];
-        p.x += p.speedX;
-        p.y += p.speedY;
-        p.opacity -= 0.02;
-        if (p.opacity <= 0) {
-            particles.splice(i, 1);
-        }
-    }
 
     for (let i = gameObjects.length - 1; i >= 0; i--) {
         const obj = gameObjects[i];
@@ -354,15 +339,6 @@ function draw() {
         return;
     }
 
-    particles.forEach(p => {
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fillStyle = p.color;
-        ctx.globalAlpha = p.opacity;
-        ctx.fill();
-        ctx.globalAlpha = 1;
-    });
-
     let playerImage = playerRunFrames[player.frameIndex];
     let pWidth = player.width;
     let pHeight = player.height;
@@ -399,19 +375,19 @@ function draw() {
     ctx.fillText('High Score: ' + highScore, width / 2, 70);
 }
 
-// Mobile/Desktop Safe Game Loop Start
+// Mobile Safe Game Loop Start
 let gameLoopStarted = false;
 
 function startGameLoop() {
     if (!gameLoopStarted) {
         gameLoopStarted = true;
-        requestAnimationFrame(gameLoop);
+        gameLoop();
     }
 }
 
-['click', 'touchstart', 'keydown', 'mousedown'].forEach(event => {
-    document.addEventListener(event, startGameLoop, { once: true });
-});
+document.addEventListener('touchstart', startGameLoop, { once: true });
+document.addEventListener('mousedown', startGameLoop, { once: true });
+document.addEventListener('keydown', startGameLoop, { once: true });
 
 function gameLoop() {
     update();
