@@ -48,26 +48,8 @@ const bossFoods = [
 
 const backgroundStartImage = loadImage('assets/background.svg');
 
-// 🔊 Start Sound
+// Start Sound
 const startSound = new Audio('assets/start.mp3');
-
-// 📚 Quotes — dynamically loaded
-let motivationalQuotes = [];
-
-fetch('quotes.json')
-    .then(response => response.json())
-    .then(data => {
-        motivationalQuotes = data;
-    })
-    .catch(error => console.error('Failed to load quotes:', error));
-
-function generateMotivationalQuote() {
-    if (motivationalQuotes.length === 0) {
-        return "Keep going!";
-    }
-    const index = Math.floor(Math.random() * motivationalQuotes.length);
-    return motivationalQuotes[index];
-}
 
 // Responsive font size helper
 function getResponsiveFontSize(baseSize) {
@@ -127,7 +109,7 @@ let highScore = localStorage.getItem('highScore') || 0;
 const parallaxLayers = [];
 const layerSpeeds = [0.2, 0.5, 1.0];
 const shapesPerLayer = 30;
-let levelLength = 10000;
+let levelLength = 10000; // Dynamic now!
 
 function randomColor() {
     const letters = '0123456789ABCDEF';
@@ -139,6 +121,7 @@ function randomColor() {
 }
 
 function calculateLevelLength() {
+    // Bigger journey depending on level
     return (currentLevel * 100) * backgroundSpeed * 60;
 }
 
@@ -199,6 +182,28 @@ function randomStartText() {
 }
 
 randomStartText();
+
+// Motivational Quotes Generator
+function generateMotivationalQuote() {
+    const quotes = [
+        "You can do it!",
+        "Sweat and Smile!",
+        "Every step counts!",
+        "Eat clean, stay fit!",
+        "One more carrot, one less worry!",
+        "Fuel your greatness!",
+        "Be stronger than your excuses!",
+        "Health is wealth!",
+        "Vegetables are victory!",
+        "Small steps, big change!",
+        "Make yourself proud!",
+        "Celebrate progress!",
+        "More veggies, more victories!",
+        "Healthy hustle!",
+        "Run like you mean it!"
+    ];
+    return quotes[Math.floor(Math.random() * quotes.length)];
+}
 
 // Start the Game
 function startGame() {
@@ -415,10 +420,10 @@ function draw() {
         ctx.fillStyle = 'darkgreen';
         ctx.font = `bold ${getResponsiveFontSize(32)}px sans-serif`;
         ctx.fillText('Tap to Start', width / 2, height / 2 + 150);
-
+        
         ctx.fillStyle = 'black';
         ctx.font = `bold ${getResponsiveFontSize(16)}px sans-serif`;
-        ctx.fillText('v1.6.6', width - 60, height - 20); // VERSION NUMBER
+        ctx.fillText('v1.6.5', width - 60, height - 20); // VERSION NUMBER
         return;
     }
 
