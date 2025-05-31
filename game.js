@@ -51,18 +51,15 @@ const backgroundStartImage = loadImage('assets/background.svg');
 // 🔊 Start Sound
 const startSound = new Audio('assets/start.mp3');
 
-// 📚 Quotes
-let motivationalQuotes = ["Stay strong!", "Keep going!", "You're doing great!"]; // fallback
+// 📚 Quotes — dynamically loaded
+let motivationalQuotes = [];
 
-async function loadQuotes() {
-    try {
-        const response = await fetch('quotes.json');
-        if (!response.ok) throw new Error('Quotes file missing!');
-        motivationalQuotes = await response.json();
-    } catch (error) {
-        console.error('Failed to load quotes:', error);
-    }
-}
+fetch('quotes.json')
+    .then(response => response.json())
+    .then(data => {
+        motivationalQuotes = data;
+    })
+    .catch(error => console.error('Failed to load quotes:', error));
 
 function generateMotivationalQuote() {
     if (motivationalQuotes.length === 0) {
@@ -72,6 +69,7 @@ function generateMotivationalQuote() {
     return motivationalQuotes[index];
 }
 
+// Responsive font size helper
 function getResponsiveFontSize(baseSize) {
     if (width < 600) {
         return baseSize * 0.6;
@@ -81,6 +79,7 @@ function getResponsiveFontSize(baseSize) {
     return baseSize;
 }
 
+// Random HEX Color Generator
 function randomHexColor() {
     return '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
 }
@@ -201,7 +200,7 @@ function randomStartText() {
 
 randomStartText();
 
-// Start Game
+// Start the Game
 function startGame() {
     if (!gameStarted) {
         gameStarted = true;
@@ -214,6 +213,7 @@ function startGame() {
     }
 }
 
+// Jump Logic
 function jump() {
     if (gameStarted && !gameOver && player.jumpCount < player.maxJumps) {
         const jumpBoost = 1 + (player.jumpCount * 0.2);
@@ -222,6 +222,7 @@ function jump() {
     }
 }
 
+// Restart Game
 function restartGame() {
     backgroundSpeed = 6;
     playerSpeed = 2.5;
@@ -240,7 +241,7 @@ function restartGame() {
     backgroundColor = "#f0f8ff";
 }
 
-// Controls
+// Keyboard / Touch Controls
 document.addEventListener('keydown', (e) => {
     if (e.code === 'Space') {
         startGame();
@@ -253,6 +254,7 @@ document.addEventListener('mousedown', () => {
     startGame();
 });
 
+// Collision Detection
 function detectCollision(a, b) {
     return a.x < b.x + b.width &&
            a.x + a.width > b.x &&
@@ -260,6 +262,7 @@ function detectCollision(a, b) {
            a.y + a.height > b.y;
 }
 
+// Trampoline Collision
 function checkTrampolineCollision() {
     trampolines.forEach(tramp => {
         if (detectCollision(player, tramp) && player.vy >= 0) {
@@ -269,6 +272,7 @@ function checkTrampolineCollision() {
     });
 }
 
+// Spawn Elements
 function spawnCollectible() {
     const col = {
         type: "collectible",
@@ -305,6 +309,7 @@ function spawnBossFood() {
     };
 }
 
+// Update Game State
 function update() {
     if (!gameStarted || gameOver) return;
 
@@ -386,6 +391,7 @@ function update() {
     }
 }
 
+// Draw the Game
 function draw() {
     ctx.clearRect(0, 0, width, height);
 
@@ -412,7 +418,7 @@ function draw() {
 
         ctx.fillStyle = 'black';
         ctx.font = `bold ${getResponsiveFontSize(16)}px sans-serif`;
-        ctx.fillText('v1.6.7', width - 60, height - 20); // VERSION
+        ctx.fillText('v1.6.6', width - 60, height - 20); // VERSION NUMBER
         return;
     }
 
@@ -458,7 +464,11 @@ function draw() {
     }
 }
 
-// Start Game only after Quotes are loaded
-loadQuotes().then(() => {
-    gameLoop();
-});
+// Game Loop
+function gameLoop() {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
