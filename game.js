@@ -92,12 +92,10 @@ const player = {
 
 let gameObjects = [];
 let trampolines = [];
-let platforms = [];
 
 let gameStarted = false;
 let spawnTimer = 0;
 let trampolineTimer = 0;
-let platformTimer = 0;
 let score = 0;
 let scoreTimer = 0;
 
@@ -167,20 +165,10 @@ function spawnPowerUp() {
 function spawnTrampoline() {
     trampolines.push({
         x: width,
-        y: height - 100,
+        baseY: height - 100,
         width: 100,
-        height: 30
-    });
-}
-
-function spawnPlatform() {
-    platforms.push({
-        x: width,
-        baseY: Math.random() * (height * 0.7),
-        y: 0,
-        width: 80 + Math.random() * 100,
-        height: 20 + Math.random() * 20,
-        amplitude: 30 + Math.random() * 20,
+        height: 30,
+        amplitude: 20 + Math.random() * 40,
         waveSpeed: 0.5 + Math.random(),
         waveOffset: Math.random() * Math.PI * 2
     });
@@ -210,11 +198,9 @@ function restartGame() {
     scoreTimer = 0;
     spawnTimer = 0;
     trampolineTimer = 0;
-    platformTimer = 0;
     comboCount = 0;
     gameObjects = [];
     trampolines = [];
-    platforms = [];
     gameOver = false;
     victoryAchieved = false;
     randomStartText();
@@ -251,16 +237,6 @@ function checkTrampolineCollision() {
     });
 }
 
-function checkPlatformCollision() {
-    platforms.forEach(plat => {
-        if (detectCollision(player, plat) && player.vy >= 0) {
-            player.vy = 0;
-            player.y = plat.y - player.height;
-            player.jumpCount = 0;
-        }
-    });
-}
-
 function update() {
     if (!gameStarted || gameOver) return;
 
@@ -279,7 +255,6 @@ function update() {
     }
 
     checkTrampolineCollision();
-    checkPlatformCollision();
 
     gameObjects.forEach(obj => {
         obj.x -= obj.speed;
@@ -287,12 +262,8 @@ function update() {
 
     trampolines.forEach(tramp => {
         tramp.x -= backgroundSpeed;
-    });
-
-    let now = Date.now() / 1000;
-    platforms.forEach(plat => {
-        plat.x -= backgroundSpeed;
-        plat.y = plat.baseY + Math.sin(now * plat.waveSpeed + plat.waveOffset) * plat.amplitude;
+        const now = Date.now() / 1000;
+        tramp.y = tramp.baseY + Math.sin(now * tramp.waveSpeed + tramp.waveOffset) * tramp.amplitude;
     });
 
     for (let i = gameObjects.length - 1; i >= 0; i--) {
@@ -301,8 +272,7 @@ function update() {
             if (obj.type === "collectible") {
                 gameObjects.splice(i, 1);
                 comboCount++;
-                let points = 10;
-                score += points;
+                score += 10;
                 motivationalText = quotes[Math.floor(Math.random() * quotes.length)];
                 motivationalTimer = 120;
                 backgroundSpeed += 0.5;
@@ -324,7 +294,6 @@ function update() {
 
     gameObjects = gameObjects.filter(obj => obj.x + obj.width > 0);
     trampolines = trampolines.filter(tramp => tramp.x + tramp.width > 0);
-    platforms = platforms.filter(plat => plat.x + plat.width > 0);
 
     spawnTimer++;
     if (spawnTimer % 50 === 0) {
@@ -338,13 +307,8 @@ function update() {
     }
 
     trampolineTimer++;
-    if (trampolineTimer % 300 === 0) {
+    if (trampolineTimer % 200 === 0) {
         spawnTrampoline();
-    }
-
-    platformTimer++;
-    if (platformTimer % 200 === 0) {
-        spawnPlatform();
     }
 
     scoreTimer++;
@@ -376,7 +340,7 @@ function draw() {
 
     ctx.fillStyle = 'black';
     ctx.font = 'bold 16px sans-serif';
-    ctx.fillText("v1.4.2", width - 80, height - 20);
+    ctx.fillText("v1.4.3", width - 80, height - 20);
 
     if (!gameStarted) {
         ctx.fillStyle = 'black';
@@ -395,11 +359,6 @@ function draw() {
     trampolines.forEach(tramp => {
         ctx.fillStyle = 'blue';
         ctx.fillRect(tramp.x, tramp.y, tramp.width, tramp.height);
-    });
-
-    platforms.forEach(plat => {
-        ctx.fillStyle = 'gray';
-        ctx.fillRect(plat.x, plat.y, plat.width, plat.height);
     });
 
     let playerImage;
