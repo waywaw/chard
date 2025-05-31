@@ -1,7 +1,9 @@
-// [ All previous code same — keeping player, images, etc. ]
+// [ All your normal setup code here — player, images, etc. ]
+
+let errorMessage = ""; // 🛑 New error tracker
 
 function update() {
-    if (!gameStarted || gameOver) return;
+    if (!gameStarted || gameOver || errorMessage) return;
 
     backgroundX -= backgroundSpeed;
     if (backgroundX <= -width) {
@@ -17,12 +19,8 @@ function update() {
         player.jumpCount = 0;
     }
 
-    try {
-        checkTrampolineCollision();
-        checkPlatformCollision();
-    } catch (error) {
-        console.error("Collision error:", error);
-    }
+    checkTrampolineCollision();
+    checkPlatformCollision();
 
     gameObjects.forEach(obj => {
         obj.x -= obj.speed;
@@ -41,65 +39,56 @@ function update() {
     trampolines = trampolines.filter(tramp => tramp.x + tramp.width > 0);
     platforms = platforms.filter(plat => plat.x + plat.width > 0);
 
-    // MAX LIMITS
-    if (gameObjects.length > 200) gameObjects.shift();
-    if (trampolines.length > 50) trampolines.shift();
-    if (platforms.length > 50) platforms.shift();
-
-    try {
-        for (let i = gameObjects.length - 1; i >= 0; i--) {
-            const obj = gameObjects[i];
-            if (detectCollision(player, obj)) {
-                if (obj.type === "collectible") {
-                    gameObjects.splice(i, 1);
-                    comboCount++;
-                    if (comboCount % 5 === 0) {
-                        score += 50;
-                    }
-                    if (comboCount >= 10 && !rainbowMode) {
-                        rainbowMode = true;
-                        rainbowTimer = 600;
-                    }
-                    let points = rainbowMode ? 20 : 10;
-                    if (speedBoostMode) points *= 2;
-                    score += points;
-                    motivationalText = quotes[Math.floor(Math.random() * quotes.length)];
-                    motivationalTimer = 120;
-                    backgroundSpeed += 0.5;
-                    playerSpeed += 0.3;
-                } else if (obj.type === "obstacle") {
-                    gameObjects.splice(i, 1);
-                    comboCount = 0;
-                    rainbowMode = false;
-                    rainbowTimer = 0;
-                    magnetMode = false;
-                    magnetTimer = 0;
-                    speedBoostMode = false;
-                    speedBoostTimer = 0;
-                    score = Math.max(0, score - 5);
-                    backgroundSpeed -= 1;
-                    playerSpeed -= 0.5;
-                    if (backgroundSpeed < minSpeed) {
-                        triggerGameOver();
-                    }
-                } else if (obj.type === "powerup") {
-                    gameObjects.splice(i, 1);
-                    if (Math.random() < 0.5) {
-                        magnetMode = true;
-                        magnetTimer = 600;
-                    } else {
-                        speedBoostMode = true;
-                        speedBoostTimer = 300;
-                    }
+    for (let i = gameObjects.length - 1; i >= 0; i--) {
+        const obj = gameObjects[i];
+        if (detectCollision(player, obj)) {
+            if (obj.type === "collectible") {
+                gameObjects.splice(i, 1);
+                comboCount++;
+                if (comboCount % 5 === 0) {
+                    score += 50;
+                }
+                if (comboCount >= 10 && !rainbowMode) {
+                    rainbowMode = true;
+                    rainbowTimer = 600;
+                }
+                let points = rainbowMode ? 20 : 10;
+                if (speedBoostMode) points *= 2;
+                score += points;
+                motivationalText = quotes[Math.floor(Math.random() * quotes.length)];
+                motivationalTimer = 120;
+                backgroundSpeed += 0.5;
+                playerSpeed += 0.3;
+            } else if (obj.type === "obstacle") {
+                gameObjects.splice(i, 1);
+                comboCount = 0;
+                rainbowMode = false;
+                rainbowTimer = 0;
+                magnetMode = false;
+                magnetTimer = 0;
+                speedBoostMode = false;
+                speedBoostTimer = 0;
+                score = Math.max(0, score - 5);
+                backgroundSpeed -= 1;
+                playerSpeed -= 0.5;
+                if (backgroundSpeed < minSpeed) {
+                    triggerGameOver();
+                }
+            } else if (obj.type === "powerup") {
+                gameObjects.splice(i, 1);
+                if (Math.random() < 0.5) {
+                    magnetMode = true;
+                    magnetTimer = 600;
+                } else {
+                    speedBoostMode = true;
+                    speedBoostTimer = 300;
                 }
             }
         }
-    } catch (error) {
-        console.error("Object collision error:", error);
     }
 
     spawnTimer++;
-    if (spawnTimer % 70 === 0) {  // SLOWED: 50 ➔ 70
+    if (spawnTimer % 50 === 0) {
         if (Math.random() < 0.7) {
             spawnCollectible();
         } else if (Math.random() < 0.2) {
@@ -110,12 +99,12 @@ function update() {
     }
 
     trampolineTimer++;
-    if (trampolineTimer % 400 === 0) {  // SLOWED: 300 ➔ 400
+    if (trampolineTimer % 300 === 0) {
         spawnTrampoline();
     }
 
     platformTimer++;
-    if (platformTimer % 350 === 0) {  // SLOWED: 200 ➔ 350
+    if (platformTimer % 200 === 0) {
         spawnPlatform();
     }
 
@@ -163,6 +152,15 @@ function draw() {
     ctx.fillStyle = 'black';
     ctx.font = 'bold 16px sans-serif';
     ctx.fillText(version, width - 80, height - 20);
+
+    if (errorMessage) {
+        ctx.fillStyle = 'red';
+        ctx.font = 'bold 20px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText("❌ ERROR ❌", width / 2, height / 2 - 40);
+        ctx.fillText(errorMessage, width / 2, height / 2);
+        return; // 🛑 Stop drawing rest
+    }
 
     if (!gameStarted) {
         ctx.fillStyle = 'black';
@@ -214,13 +212,6 @@ function draw() {
     ctx.fillText('Health Score: ' + score, width / 2, 40);
     ctx.fillText('High Score: ' + highScore, width / 2, 70);
 
-    // Debug counters:
-    ctx.fillStyle = 'red';
-    ctx.font = '12px monospace';
-    ctx.fillText(`Objs: ${gameObjects.length}`, 10, height - 40);
-    ctx.fillText(`Tramps: ${trampolines.length}`, 10, height - 25);
-    ctx.fillText(`Plats: ${platforms.length}`, 10, height - 10);
-
     if (motivationalTimer > 0) {
         ctx.fillStyle = 'blue';
         ctx.font = 'bold 28px sans-serif';
@@ -265,3 +256,18 @@ function draw() {
         ctx.fillText('Tap to Restart', width / 2, height / 2 + 120);
     }
 }
+
+function gameLoop() {
+    try {
+        update();
+        draw();
+        if (!errorMessage) {
+            requestAnimationFrame(gameLoop);
+        }
+    } catch (err) {
+        console.error(err);
+        errorMessage = err.message || "Unknown Error";
+    }
+}
+
+gameLoop();
