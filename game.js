@@ -14,7 +14,7 @@ window.addEventListener('resize', () => {
 });
 
 // Version display
-const version = "v1.3.4";
+const version = "v1.3.5";
 
 // Load Images
 const loadImage = (src) => {
@@ -349,7 +349,7 @@ function update() {
     }
 
     spawnTimer++;
-    if (spawnTimer % 30 === 0) {
+    if (spawnTimer % 50 === 0) { // SLOWER SPAWN RATE!
         if (Math.random() < 0.7) {
             spawnCollectible();
         } else if (Math.random() < 0.2) {
@@ -509,7 +509,7 @@ function draw() {
         if (victoryAchieved) {
             ctx.fillStyle = 'green';
             ctx.font = 'bold 32px sans-serif';
-            ctx.fillText('You lowered your cholesterol by 20%!', width / 2, height / 2 + 60);
+            ctx.fillText('You lowered your cholesterol by 20%!", width / 2, height / 2 + 60);
         }
         ctx.fillStyle = 'black';
         ctx.font = 'bold 24px sans-serif';
