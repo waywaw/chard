@@ -1,3 +1,5 @@
+// 3.0.0 — Color change every 5 veggies
+
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
@@ -32,7 +34,21 @@ function playSound(sound) {
     clone.play();
 }
 
-// Load Player Sprites
+// Background Palettes
+const palettes = [
+    ['#FF7F50', '#FFD700', '#FF6347', '#CD5C5C'],
+    ['#00CED1', '#4682B4', '#5F9EA0', '#6495ED'],
+    ['#ADFF2F', '#7FFF00', '#32CD32', '#006400'],
+    ['#9932CC', '#8A2BE2', '#9400D3', '#4B0082'],
+    ['#FF69B4', '#FF1493', '#DB7093', '#C71585']
+];
+let currentPalette = palettes[0];
+
+function randomizePalette() {
+    const randomIndex = Math.floor(Math.random() * palettes.length);
+    currentPalette = palettes[randomIndex];
+}
+
 const playerRunFrames = [
     loadImage('assets/run1.svg'),
     loadImage('assets/run2.svg'),
@@ -46,7 +62,6 @@ const playerJumpMid = loadImage('assets/jump_mid.svg');
 const playerJumpFall = loadImage('assets/jump_fall.svg');
 const playerIdle = loadImage('assets/chard2.svg');
 
-// Load Obstacles and Collectibles
 const obstacles = [
     loadImage('assets/burger.svg'),
     loadImage('assets/pizza.svg'),
@@ -58,12 +73,10 @@ const collectibles = [
     loadImage('assets/broccoli.svg')
 ];
 
-// Powerups
 const powerups = [
-    loadImage('assets/golden_carrot.svg') // Your golden carrot SVG
+    loadImage('assets/golden_carrot.svg')
 ];
 
-// Motivational Quotes
 const quotes = [
     "You can do it! – Richard Simmons",
     "Sweat and Smile!",
@@ -81,66 +94,6 @@ const quotes = [
     "Healthy hustle!",
     "Run like you mean it!",
 ];
-
-// Dynamic Saul Bass Style Background
-function drawDynamicBackground(offset) {
-    ctx.save();
-
-    // Sky Background
-    ctx.fillStyle = '#FFE4B5'; // Light Saul Bass background base
-    ctx.fillRect(0, 0, width, height);
-
-    // Sky Color Bands
-    const skyColors = ['#FF7F50', '#FFD700', '#FF6347', '#CD5C5C'];
-    const bandHeight = height / 8;
-    for (let i = 0; i < skyColors.length; i++) {
-        ctx.fillStyle = skyColors[i];
-        ctx.fillRect(0, i * bandHeight, width, bandHeight);
-    }
-
-    // Mountains (farther, slower parallax)
-    ctx.fillStyle = '#2E2E2E'; // Dark gray
-    let mountainWidth = 300;
-    let mountainHeight = 200;
-    let mountainOffset = offset * 0.5; // Move slower for parallax
-    for (let x = -mountainWidth + (mountainOffset % mountainWidth); x < width + mountainWidth; x += mountainWidth) {
-        ctx.beginPath();
-        ctx.moveTo(x, height - 400);
-        ctx.lineTo(x + mountainWidth / 2, height - 400 - mountainHeight);
-        ctx.lineTo(x + mountainWidth, height - 400);
-        ctx.closePath();
-        ctx.fill();
-    }
-
-    // Ground Layer (closer, faster parallax)
-    ctx.fillStyle = '#000000'; // Bold black ground
-    let groundWidth = 100;
-    let groundHeight = 50;
-    let groundOffset = offset % groundWidth;
-    for (let x = -groundWidth + groundOffset; x < width + groundWidth; x += groundWidth) {
-        ctx.beginPath();
-        ctx.moveTo(x, height - 50);
-        ctx.lineTo(x + groundWidth / 2, height - 50 - groundHeight);
-        ctx.lineTo(x + groundWidth, height - 50);
-        ctx.closePath();
-        ctx.fill();
-    }
-
-    // Abstract Trees or Poles
-    ctx.fillStyle = '#333333'; // Dark abstract shapes
-    let treeSpacing = 200;
-    let treeOffset = offset % treeSpacing;
-    for (let x = -treeSpacing + treeOffset; x < width + treeSpacing; x += treeSpacing) {
-        ctx.beginPath();
-        ctx.moveTo(x + 20, height - 100);
-        ctx.lineTo(x + 30, height - 200);
-        ctx.lineTo(x + 40, height - 100);
-        ctx.closePath();
-        ctx.fill();
-    }
-
-    ctx.restore();
-}
 
 let backgroundX = 0;
 let backgroundSpeed = 6;
@@ -163,10 +116,12 @@ const player = {
 };
 
 let gameObjects = [];
+
 let gameStarted = false;
 let spawnTimer = 0;
 let score = 0;
 let scoreTimer = 0;
+
 let motivationalText = "";
 let motivationalTimer = 0;
 let startText = "";
@@ -174,8 +129,10 @@ let startText = "";
 let comboCount = 0;
 let rainbowMode = false;
 let rainbowTimer = 0;
+
 let magnetMode = false;
 let magnetTimer = 0;
+
 let speedBoostMode = false;
 let speedBoostTimer = 0;
 
@@ -195,6 +152,7 @@ function randomStartText() {
     ];
     startText = starts[Math.floor(Math.random() * starts.length)];
 }
+
 randomStartText();
 
 function spawnObstacle() {
@@ -319,15 +277,18 @@ function update() {
 
     for (let i = gameObjects.length - 1; i >= 0; i--) {
         const obj = gameObjects[i];
+
         if (obj.x + obj.width < 0) {
             gameObjects.splice(i, 1);
             continue;
         }
+
         if (detectCollision(player, obj)) {
             if (obj.type === "collectible") {
                 gameObjects.splice(i, 1);
                 comboCount++;
                 if (comboCount % 5 === 0) {
+                    randomizePalette();
                     score += 50;
                 }
                 if (comboCount >= 10 && !rainbowMode) {
@@ -382,12 +343,35 @@ function update() {
         }
     }
 
-    if (rainbowMode && --rainbowTimer <= 0) rainbowMode = false;
-    if (magnetMode && --magnetTimer <= 0) magnetMode = false;
-    if (speedBoostMode && --speedBoostTimer <= 0) speedBoostMode = false;
+    if (rainbowMode) {
+        rainbowTimer--;
+        if (rainbowTimer <= 0) {
+            rainbowMode = false;
+        }
+    }
 
-    if (++scoreTimer % 60 === 0) score++;
-    if (motivationalTimer > 0) motivationalTimer--;
+    if (magnetMode) {
+        magnetTimer--;
+        if (magnetTimer <= 0) {
+            magnetMode = false;
+        }
+    }
+
+    if (speedBoostMode) {
+        speedBoostTimer--;
+        if (speedBoostTimer <= 0) {
+            speedBoostMode = false;
+        }
+    }
+
+    scoreTimer++;
+    if (scoreTimer % 60 === 0) {
+        score++;
+    }
+
+    if (motivationalTimer > 0) {
+        motivationalTimer--;
+    }
 }
 
 function triggerGameOver() {
@@ -402,10 +386,18 @@ function triggerGameOver() {
     }
 }
 
+function drawDynamicBackground() {
+    const bandHeight = height / currentPalette.length;
+    for (let i = 0; i < currentPalette.length; i++) {
+        ctx.fillStyle = currentPalette[i];
+        ctx.fillRect(0, i * bandHeight, width, bandHeight);
+    }
+}
+
 function draw() {
     ctx.clearRect(0, 0, width, height);
 
-    drawDynamicBackground(backgroundX);
+    drawDynamicBackground();
 
     if (!gameStarted) {
         ctx.fillStyle = 'black';
@@ -482,7 +474,7 @@ function draw() {
         if (victoryAchieved) {
             ctx.fillStyle = 'green';
             ctx.font = 'bold 32px sans-serif';
-            ctx.fillText('You lowered your cholesterol by 20%!', width / 2, height / 2 + 60);
+            ctx.fillText('You lowered your cholesterol by 20%!", width / 2, height / 2 + 60);
         }
         ctx.fillStyle = 'black';
         ctx.font = 'bold 24px sans-serif';
