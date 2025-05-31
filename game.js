@@ -47,13 +47,39 @@ const collectibles = [
 
 const backgroundImage = loadImage('assets/background.svg');
 
+// Motivational Quotes
+const quotes = [
+    "You can do it! – Richard Simmons",
+    "Sweat and Smile!",
+    "Every step counts!",
+    "Eat clean, stay fit!",
+    "One more carrot, one less worry!",
+    "Fuel your greatness!",
+    "Healthy inside, healthy outside!",
+    "Power up with plants!",
+    "Be stronger than your excuses!",
+    "Health is wealth!",
+    "Run like you mean it!",
+    "Chase the best version of you!",
+    "Vegetables are victory!",
+    "Win the day!",
+    "Your heart thanks you!",
+    "Small steps, big change!",
+    "Make yourself proud!",
+    "Celebrate progress!",
+    "More veggies, more victories!",
+    "Healthy hustle!",
+    // Add more here for hundreds — we can expand this easily
+];
+
 let backgroundX = 0;
+let baseSpeed = 6;
 
 const player = {
     x: 100,
-    y: height - 250, // Adjust for larger size
-    width: 150,      // Increased from 80
-    height: 150,
+    y: height - 300, // For larger player
+    width: 200,
+    height: 200,
     vy: 0,
     gravity: 1.5,
     jumpPower: -20,
@@ -64,33 +90,38 @@ const player = {
     frameCounter: 0,
 };
 
-const gameObjects = [];
+let gameObjects = [];
 
 let gameStarted = false;
 let spawnTimer = 0;
 let score = 0;
 let scoreTimer = 0;
 
+let motivationalText = "";
+let motivationalTimer = 0;
+
 function spawnObstacle() {
     const obs = {
+        type: "obstacle",
         img: obstacles[Math.floor(Math.random() * obstacles.length)],
         x: width,
-        y: height - 100,
-        width: 60,
-        height: 60,
-        speed: 6
+        y: height - 120,
+        width: 100,
+        height: 100,
+        speed: baseSpeed
     };
     gameObjects.push(obs);
 }
 
 function spawnCollectible() {
     const col = {
+        type: "collectible",
         img: collectibles[Math.floor(Math.random() * collectibles.length)],
         x: width,
         y: height - 200,
-        width: 50,
-        height: 50,
-        speed: 6
+        width: 80,
+        height: 80,
+        speed: baseSpeed
     };
     gameObjects.push(col);
 }
@@ -125,6 +156,13 @@ document.addEventListener('mousedown', () => {
     startGame();
 });
 
+function detectCollision(a, b) {
+    return a.x < b.x + b.width &&
+           a.x + a.width > b.x &&
+           a.y < b.y + b.height &&
+           a.y + a.height > b.y;
+}
+
 function update() {
     if (!gameStarted) return;
 
@@ -147,13 +185,29 @@ function update() {
     });
 
     for (let i = gameObjects.length - 1; i >= 0; i--) {
-        if (gameObjects[i].x + gameObjects[i].width < 0) {
+        const obj = gameObjects[i];
+
+        if (obj.x + obj.width < 0) {
             gameObjects.splice(i, 1);
+            continue;
+        }
+
+        if (detectCollision(player, obj)) {
+            if (obj.type === "collectible") {
+                gameObjects.splice(i, 1);
+                score += 10;
+                motivationalText = quotes[Math.floor(Math.random() * quotes.length)];
+                motivationalTimer = 120; // Show for 2 seconds
+                baseSpeed += 0.5; // Speed up
+            } else if (obj.type === "obstacle") {
+                baseSpeed -= 2; // Slow down
+                if (baseSpeed < 4) baseSpeed = 4; // Minimum speed
+            }
         }
     }
 
     spawnTimer++;
-    if (spawnTimer % 120 === 0) {
+    if (spawnTimer % 100 === 0) {
         if (Math.random() < 0.6) {
             spawnObstacle();
         } else {
@@ -161,10 +215,13 @@ function update() {
         }
     }
 
-    // Increase score over time
     scoreTimer++;
-    if (scoreTimer % 60 === 0) { // 60 frames ~ 1 second
+    if (scoreTimer % 60 === 0) {
         score++;
+    }
+
+    if (motivationalTimer > 0) {
+        motivationalTimer--;
     }
 }
 
@@ -175,7 +232,6 @@ function draw() {
     ctx.drawImage(backgroundImage, backgroundX + width, 0, width, height);
 
     if (!gameStarted) {
-        // 📝 Storyline Text
         ctx.fillStyle = 'black';
         ctx.font = 'bold 28px sans-serif';
         ctx.textAlign = 'center';
@@ -184,17 +240,14 @@ function draw() {
         ctx.fillText('Lower cholesterol.', width / 2, height / 2 + 20);
         ctx.fillText('Stay alive. The run never ends.', width / 2, height / 2 + 60);
 
-        // Static Chard
-        ctx.drawImage(playerIdle, width / 2 - 75, height - 250, 150, 150);
+        ctx.drawImage(playerIdle, width / 2 - 100, height - 300, 200, 200);
 
-        // Start Message
         ctx.fillStyle = 'darkgreen';
         ctx.font = 'bold 32px sans-serif';
         ctx.fillText('Tap to Start', width / 2, height / 2 + 150);
         return;
     }
 
-    // Player Animation
     let playerImage;
     if (player.vy < 0) {
         playerImage = playerJumpMid;
@@ -215,11 +268,16 @@ function draw() {
         ctx.drawImage(obj.img, obj.x, obj.y, obj.width, obj.height);
     });
 
-    // 📝 Score Counter
     ctx.fillStyle = 'black';
     ctx.font = 'bold 24px sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('Health Score: ' + score, width / 2, 40);
+
+    if (motivationalTimer > 0) {
+        ctx.fillStyle = 'blue';
+        ctx.font = 'bold 28px sans-serif';
+        ctx.fillText(motivationalText, width / 2, height / 2 - 100);
+    }
 }
 
 function gameLoop() {
