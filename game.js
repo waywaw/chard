@@ -51,9 +51,9 @@ let backgroundX = 0;
 
 const player = {
     x: 100,
-    y: height - 150,
-    width: 80,
-    height: 80,
+    y: height - 250, // Adjust for larger size
+    width: 150,      // Increased from 80
+    height: 150,
     vy: 0,
     gravity: 1.5,
     jumpPower: -20,
@@ -68,6 +68,8 @@ const gameObjects = [];
 
 let gameStarted = false;
 let spawnTimer = 0;
+let score = 0;
+let scoreTimer = 0;
 
 function spawnObstacle() {
     const obs = {
@@ -108,6 +110,7 @@ function startGame() {
     }
 }
 
+// Input
 document.addEventListener('keydown', (e) => {
     if (e.code === 'Space') {
         startGame();
@@ -157,6 +160,12 @@ function update() {
             spawnCollectible();
         }
     }
+
+    // Increase score over time
+    scoreTimer++;
+    if (scoreTimer % 60 === 0) { // 60 frames ~ 1 second
+        score++;
+    }
 }
 
 function draw() {
@@ -166,14 +175,26 @@ function draw() {
     ctx.drawImage(backgroundImage, backgroundX + width, 0, width, height);
 
     if (!gameStarted) {
-        ctx.drawImage(playerIdle, width / 2 - 40, height - 150, 80, 80);
+        // 📝 Storyline Text
         ctx.fillStyle = 'black';
-        ctx.font = 'bold 36px sans-serif';
+        ctx.font = 'bold 28px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('Tap to Start', width / 2, height / 2);
+        ctx.fillText('Run for your health.', width / 2, height / 2 - 60);
+        ctx.fillText('Lower blood pressure.', width / 2, height / 2 - 20);
+        ctx.fillText('Lower cholesterol.', width / 2, height / 2 + 20);
+        ctx.fillText('Stay alive. The run never ends.', width / 2, height / 2 + 60);
+
+        // Static Chard
+        ctx.drawImage(playerIdle, width / 2 - 75, height - 250, 150, 150);
+
+        // Start Message
+        ctx.fillStyle = 'darkgreen';
+        ctx.font = 'bold 32px sans-serif';
+        ctx.fillText('Tap to Start', width / 2, height / 2 + 150);
         return;
     }
 
+    // Player Animation
     let playerImage;
     if (player.vy < 0) {
         playerImage = playerJumpMid;
@@ -193,6 +214,12 @@ function draw() {
     gameObjects.forEach(obj => {
         ctx.drawImage(obj.img, obj.x, obj.y, obj.width, obj.height);
     });
+
+    // 📝 Score Counter
+    ctx.fillStyle = 'black';
+    ctx.font = 'bold 24px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Health Score: ' + score, width / 2, 40);
 }
 
 function gameLoop() {
