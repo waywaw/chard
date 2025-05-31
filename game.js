@@ -1,5 +1,4 @@
-
-// Chard Runner 2.0.2 - Super Clean Mobile/Desktop Start
+// Chard Runner 2.0.3 - Sound-Free Mobile Fix
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
@@ -22,15 +21,15 @@ const loadImage = (src) => {
     return img;
 };
 
-const jumpSound = new Audio('assets/jump.mp3');
-const collectSound = new Audio('assets/collect.mp3');
-const splatSound = new Audio('assets/splat.mp3');
-const startSound = new Audio('assets/start.mp3');
-const gameOverSound = new Audio('assets/gameover.mp3');
+// Dummy sounds (no-op to avoid mobile browser blocking)
+const jumpSound = new Audio();
+const collectSound = new Audio();
+const splatSound = new Audio();
+const startSound = new Audio();
+const gameOverSound = new Audio();
 
 function playSound(sound) {
-    const clone = sound.cloneNode();
-    clone.play();
+    // intentionally blank — avoids autoplay restrictions
 }
 
 const playerRunFrames = [
