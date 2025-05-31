@@ -20,6 +20,13 @@ const loadImage = (src) => {
     return img;
 };
 
+// Load Sounds
+const jumpSound = new Audio('assets/jump.mp3');
+const collectSound = new Audio('assets/collect.mp3');
+const splatSound = new Audio('assets/splat.mp3');
+const startSound = new Audio('assets/start.mp3');
+const gameOverSound = new Audio('assets/gameover.mp3');
+
 const playerRunFrames = [
     loadImage('assets/run1.svg'),
     loadImage('assets/run2.svg'),
@@ -55,29 +62,24 @@ const quotes = [
     "Eat clean, stay fit!",
     "One more carrot, one less worry!",
     "Fuel your greatness!",
-    "Healthy inside, healthy outside!",
-    "Power up with plants!",
     "Be stronger than your excuses!",
     "Health is wealth!",
-    "Run like you mean it!",
-    "Chase the best version of you!",
     "Vegetables are victory!",
-    "Win the day!",
-    "Your heart thanks you!",
     "Small steps, big change!",
     "Make yourself proud!",
     "Celebrate progress!",
     "More veggies, more victories!",
     "Healthy hustle!",
-    // Add more here for hundreds — we can expand this easily
+    "Run like you mean it!",
 ];
 
 let backgroundX = 0;
 let baseSpeed = 6;
+const minSpeed = 2;
 
 const player = {
-    x: 100,
-    y: height - 300, // For larger player
+    x: 50,
+    y: height - 300,
     width: 200,
     height: 200,
     vy: 0,
@@ -99,16 +101,34 @@ let scoreTimer = 0;
 
 let motivationalText = "";
 let motivationalTimer = 0;
+let startText = "";
+
+let gameOver = false;
+
+function randomStartText() {
+    const starts = [
+        "Run for your health.",
+        "Lower blood pressure.",
+        "Lower cholesterol.",
+        "Stay alive. The run never ends.",
+        "Each step is a win.",
+        "Healthy life, happy life.",
+        "Run toward your best self."
+    ];
+    startText = starts[Math.floor(Math.random() * starts.length)];
+}
+
+randomStartText();
 
 function spawnObstacle() {
     const obs = {
         type: "obstacle",
         img: obstacles[Math.floor(Math.random() * obstacles.length)],
         x: width,
-        y: height - 120,
-        width: 100,
-        height: 100,
-        speed: baseSpeed
+        y: Math.random() * (height - 300) + 100,
+        width: Math.floor(Math.random() * 40) + 120,
+        height: Math.floor(Math.random() * 40) + 120,
+        speed: baseSpeed + Math.random() * 2
     };
     gameObjects.push(obs);
 }
@@ -118,30 +138,45 @@ function spawnCollectible() {
         type: "collectible",
         img: collectibles[Math.floor(Math.random() * collectibles.length)],
         x: width,
-        y: height - 200,
-        width: 80,
-        height: 80,
-        speed: baseSpeed
+        y: Math.random() * (height - 400) + 100,
+        width: Math.floor(Math.random() * 40) + 120,
+        height: Math.floor(Math.random() * 40) + 120,
+        speed: baseSpeed + Math.random() * 2
     };
     gameObjects.push(col);
 }
 
 function jump() {
-    if (gameStarted && player.jumpCount < player.maxJumps) {
+    if (gameStarted && !gameOver && player.jumpCount < player.maxJumps) {
         player.vy = player.jumpPower;
         player.jumpCount++;
+        jumpSound.play();
     }
 }
 
 function startGame() {
     if (!gameStarted) {
         gameStarted = true;
+        startSound.play();
+    } else if (gameOver) {
+        restartGame();
     } else {
         jump();
     }
 }
 
-// Input
+function restartGame() {
+    // Reset everything
+    baseSpeed = 6;
+    score = 0;
+    scoreTimer = 0;
+    spawnTimer = 0;
+    gameObjects = [];
+    gameOver = false;
+    randomStartText();
+    gameStarted = false;
+}
+
 document.addEventListener('keydown', (e) => {
     if (e.code === 'Space') {
         startGame();
@@ -164,7 +199,7 @@ function detectCollision(a, b) {
 }
 
 function update() {
-    if (!gameStarted) return;
+    if (!gameStarted || gameOver) return;
 
     backgroundX -= 2;
     if (backgroundX <= -width) {
@@ -198,10 +233,16 @@ function update() {
                 score += 10;
                 motivationalText = quotes[Math.floor(Math.random() * quotes.length)];
                 motivationalTimer = 120; // Show for 2 seconds
-                baseSpeed += 0.5; // Speed up
+                baseSpeed += 1; // Speed up
+                collectSound.play();
             } else if (obj.type === "obstacle") {
+                gameObjects.splice(i, 1);
+                score = Math.max(0, score - 5); // Lose some score
                 baseSpeed -= 2; // Slow down
-                if (baseSpeed < 4) baseSpeed = 4; // Minimum speed
+                splatSound.play();
+                if (baseSpeed < minSpeed) {
+                    triggerGameOver();
+                }
             }
         }
     }
@@ -225,6 +266,11 @@ function update() {
     }
 }
 
+function triggerGameOver() {
+    gameOver = true;
+    gameOverSound.play();
+}
+
 function draw() {
     ctx.clearRect(0, 0, width, height);
 
@@ -235,10 +281,7 @@ function draw() {
         ctx.fillStyle = 'black';
         ctx.font = 'bold 28px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('Run for your health.', width / 2, height / 2 - 60);
-        ctx.fillText('Lower blood pressure.', width / 2, height / 2 - 20);
-        ctx.fillText('Lower cholesterol.', width / 2, height / 2 + 20);
-        ctx.fillText('Stay alive. The run never ends.', width / 2, height / 2 + 60);
+        ctx.fillText(startText, width / 2, height / 2);
 
         ctx.drawImage(playerIdle, width / 2 - 100, height - 300, 200, 200);
 
@@ -277,6 +320,15 @@ function draw() {
         ctx.fillStyle = 'blue';
         ctx.font = 'bold 28px sans-serif';
         ctx.fillText(motivationalText, width / 2, height / 2 - 100);
+    }
+
+    if (gameOver) {
+        ctx.fillStyle = 'red';
+        ctx.font = 'bold 48px sans-serif';
+        ctx.fillText('Game Over!', width / 2, height / 2);
+        ctx.fillStyle = 'black';
+        ctx.font = 'bold 24px sans-serif';
+        ctx.fillText('Tap to Restart', width / 2, height / 2 + 60);
     }
 }
 
