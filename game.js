@@ -20,7 +20,6 @@ const loadImage = (src) => {
     return img;
 };
 
-// Load Sounds
 const jumpSound = new Audio('assets/jump.mp3');
 const collectSound = new Audio('assets/collect.mp3');
 const splatSound = new Audio('assets/splat.mp3');
@@ -46,7 +45,6 @@ const playerJumpMid = loadImage('assets/jump_mid.svg');
 const playerJumpFall = loadImage('assets/jump_fall.svg');
 const playerIdle = loadImage('assets/chard2.svg');
 
-// Load Obstacles and Collectibles
 const obstacles = [
     loadImage('assets/burger.svg'),
     loadImage('assets/pizza.svg'),
@@ -62,7 +60,6 @@ const powerups = [
     loadImage('assets/golden_carrot.svg')
 ];
 
-// Motivational Quotes
 const quotes = [
     "You can do it! – Richard Simmons",
     "Sweat and Smile!",
@@ -81,17 +78,32 @@ const quotes = [
     "Run like you mean it!",
 ];
 
-// Dynamic Saul Bass Style Background
+// Background Color Palettes
+const palettes = [
+    ['#FF7F50', '#FFD700', '#FF6347', '#CD5C5C'],
+    ['#00CED1', '#4682B4', '#5F9EA0', '#6495ED'],
+    ['#ADFF2F', '#7FFF00', '#32CD32', '#006400'],
+    ['#9932CC', '#8A2BE2', '#9400D3', '#4B0082'],
+    ['#FF69B4', '#FF1493', '#DB7093', '#C71585']
+];
+
+let currentPalette = palettes[0];
+
+function randomizePalette() {
+    const randomIndex = Math.floor(Math.random() * palettes.length);
+    currentPalette = palettes[randomIndex];
+}
+
+// Draw Dynamic Saul Bass Background
 function drawDynamicBackground(offset) {
     ctx.save();
 
-    ctx.fillStyle = '#FFE4B5'; // Base background
+    ctx.fillStyle = '#FFE4B5';
     ctx.fillRect(0, 0, width, height);
 
-    const skyColors = ['#FF7F50', '#FFD700', '#FF6347', '#CD5C5C'];
     const bandHeight = height / 8;
-    for (let i = 0; i < skyColors.length; i++) {
-        ctx.fillStyle = skyColors[i];
+    for (let i = 0; i < currentPalette.length; i++) {
+        ctx.fillStyle = currentPalette[i];
         ctx.fillRect(0, i * bandHeight, width, bandHeight);
     }
 
@@ -121,7 +133,7 @@ function drawDynamicBackground(offset) {
         ctx.fill();
     }
 
-    ctx.fillStyle = '#333333'; // Abstract trees/poles
+    ctx.fillStyle = '#333333'; // Trees/Poles
     let treeSpacing = 200;
     let treeOffset = offset % treeSpacing;
     for (let x = -treeSpacing + treeOffset; x < width + treeSpacing; x += treeSpacing) {
@@ -267,6 +279,7 @@ function restartGame() {
     gameOver = false;
     victoryAchieved = false;
     randomStartText();
+    randomizePalette();
     gameStarted = false;
 }
 
@@ -294,7 +307,6 @@ function detectCollision(a, b) {
 function update() {
     if (!gameStarted || gameOver) return;
 
-    // Slow motion during Rainbow Mode
     if (rainbowMode) {
         backgroundSpeed = baseBackgroundSpeed * 0.5;
         playerSpeed = 1.5;
@@ -317,16 +329,16 @@ function update() {
         player.jumpCount = 0;
     }
 
+    // Updated object movement
     gameObjects.forEach(obj => {
-        obj.x -= obj.speed;
+        obj.x -= backgroundSpeed * (obj.type === 'obstacle' ? 1.2 : 1);
     });
 
-    // Remove offscreen objects
+    // Cleanup
     for (let i = gameObjects.length - 1; i >= 0; i--) {
         const obj = gameObjects[i];
         if (obj.x + obj.width < 0) {
             gameObjects.splice(i, 1);
-            continue;
         }
     }
 
