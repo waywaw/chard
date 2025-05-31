@@ -1,9 +1,23 @@
-// [ All your normal setup code here — player, images, etc. ]
+// [ Standard setup code... canvas, ctx, images, player, etc. ]
 
-let errorMessage = ""; // 🛑 New error tracker
+let platformTime = Date.now() / 1000; // ⏱️ For platform wave motion
+
+function spawnPlatform() {
+    platforms.push({
+        x: width,
+        baseY: Math.random() * (height * 0.7),
+        y: 0, // will be updated in update()
+        width: 80 + Math.random() * 100,
+        height: 20 + Math.random() * 20,
+        speed: 6,
+        amplitude: 30 + Math.random() * 20,
+        waveSpeed: 0.02 + Math.random() * 0.02,
+        waveOffset: Math.random() * Math.PI * 2
+    });
+}
 
 function update() {
-    if (!gameStarted || gameOver || errorMessage) return;
+    if (!gameStarted || gameOver) return;
 
     backgroundX -= backgroundSpeed;
     if (backgroundX <= -width) {
@@ -26,15 +40,17 @@ function update() {
         obj.x -= obj.speed;
     });
 
+    let now = Date.now() / 1000;
+    platforms.forEach(plat => {
+        plat.x -= backgroundSpeed;
+        plat.y = plat.baseY + Math.sin(now * 2 * plat.waveSpeed + plat.waveOffset) * plat.amplitude;
+    });
+
     trampolines.forEach(tramp => {
         tramp.x -= backgroundSpeed;
     });
 
-    platforms.forEach(plat => {
-        plat.x -= backgroundSpeed;
-    });
-
-    // Memory Cleanup
+    // Cleanup
     gameObjects = gameObjects.filter(obj => obj.x + obj.width > 0);
     trampolines = trampolines.filter(tramp => tramp.x + tramp.width > 0);
     platforms = platforms.filter(plat => plat.x + plat.width > 0);
@@ -151,16 +167,7 @@ function draw() {
 
     ctx.fillStyle = 'black';
     ctx.font = 'bold 16px sans-serif';
-    ctx.fillText(version, width - 80, height - 20);
-
-    if (errorMessage) {
-        ctx.fillStyle = 'red';
-        ctx.font = 'bold 20px monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText("❌ ERROR ❌", width / 2, height / 2 - 40);
-        ctx.fillText(errorMessage, width / 2, height / 2);
-        return; // 🛑 Stop drawing rest
-    }
+    ctx.fillText("v1.4.1", width - 80, height - 20);
 
     if (!gameStarted) {
         ctx.fillStyle = 'black';
@@ -258,16 +265,9 @@ function draw() {
 }
 
 function gameLoop() {
-    try {
-        update();
-        draw();
-        if (!errorMessage) {
-            requestAnimationFrame(gameLoop);
-        }
-    } catch (err) {
-        console.error(err);
-        errorMessage = err.message || "Unknown Error";
-    }
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
 }
 
 gameLoop();
