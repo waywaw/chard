@@ -66,7 +66,7 @@ const quotes = [
 
 // Random HEX color generator
 function randomHexColor() {
-    return '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+    return '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
 }
 
 let backgroundColor = "#f0f8ff";
@@ -86,7 +86,7 @@ const player = {
     jumpCount: 0,
     maxJumps: 3,
     frameIndex: 0,
-    frameSpeed: 10, // Start slower — higher number = slower frame switching
+    frameSpeed: 12, // 🐢 Start very slow (higher = slower animation speed)
     frameCounter: 0,
 };
 
@@ -180,7 +180,7 @@ function startGame() {
 function restartGame() {
     backgroundSpeed = 6;
     playerSpeed = 2.5;
-    player.frameSpeed = 10;
+    player.frameSpeed = 12; // 🐢 Reset to slow start
     score = 0;
     scoreTimer = 0;
     spawnTimer = 0;
@@ -260,7 +260,11 @@ function update() {
         if (detectCollision(player, bossFood)) {
             currentLevel++;
             backgroundColor = randomHexColor();
-            bossFood = null; // 🛡️ Safely remove after collision
+            bossFood = null;
+            // 🏃‍♂️ Gradually speed up player animation on level up
+            if (player.frameSpeed > 4) {
+                player.frameSpeed -= 0.5;
+            }
         }
         if (bossFood && bossFood.x + bossFood.width < 0) {
             bossFood = null;
@@ -278,9 +282,6 @@ function update() {
                 motivationalTimer = 120;
                 backgroundSpeed += 0.5;
                 playerSpeed += 0.2;
-                if (player.frameSpeed > 5) {
-                    player.frameSpeed -= 0.2;
-                }
             }
         }
     }
@@ -328,7 +329,7 @@ function draw() {
 
     ctx.fillStyle = 'black';
     ctx.font = 'bold 16px sans-serif';
-    ctx.fillText("v1.5.1", width - 80, height - 20);
+    ctx.fillText("v1.5.2", width - 80, height - 20);
 
     if (!gameStarted) {
         ctx.fillStyle = 'black';
@@ -369,7 +370,7 @@ function draw() {
         ctx.drawImage(obj.img, obj.x, obj.y, obj.width, obj.height);
     });
 
-    if (bossFood && bossFood.img) { // 🛡️ Only draw if bossFood exists
+    if (bossFood && bossFood.img) {
         ctx.drawImage(bossFood.img, bossFood.x, bossFood.y, bossFood.width, bossFood.height);
     }
 
