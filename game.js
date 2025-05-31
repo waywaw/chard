@@ -40,6 +40,12 @@ const collectibles = [
     loadImage('assets/broccoli.svg')
 ];
 
+const bossFoods = [
+    loadImage('assets/burger.svg'),
+    loadImage('assets/pizza.svg'),
+    loadImage('assets/donut.svg')
+];
+
 const quotes = [
     "Keep going!",
     "Every step counts.",
@@ -58,7 +64,12 @@ const quotes = [
     "Victory loves preparation."
 ];
 
-const backgroundColor = "#f0f8ff";
+// Random HEX color generator
+function randomHexColor() {
+    return '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+}
+
+let backgroundColor = "#f0f8ff";
 
 let backgroundX = 0;
 let backgroundSpeed = 6;
@@ -75,18 +86,20 @@ const player = {
     jumpCount: 0,
     maxJumps: 3,
     frameIndex: 0,
-    frameSpeed: 10, // 🧘‍♂️ Start slower — higher number = slower frame switching
+    frameSpeed: 10, // Start slower — higher number = slower frame switching
     frameCounter: 0,
 };
 
 let gameObjects = [];
 let trampolines = [];
+let bossFood = null;
 
 let gameStarted = false;
 let spawnTimer = 0;
 let trampolineTimer = 0;
 let score = 0;
 let scoreTimer = 0;
+let currentLevel = 1;
 
 let motivationalText = "";
 let motivationalTimer = 0;
@@ -136,6 +149,17 @@ function spawnTrampoline() {
     });
 }
 
+function spawnBossFood() {
+    bossFood = {
+        img: bossFoods[Math.floor(Math.random() * bossFoods.length)],
+        x: width,
+        y: height - 300,
+        width: 300,
+        height: 300,
+        speed: 6
+    };
+}
+
 function jump() {
     if (gameStarted && !gameOver && player.jumpCount < player.maxJumps) {
         player.vy = player.jumpPower;
@@ -162,11 +186,14 @@ function restartGame() {
     spawnTimer = 0;
     trampolineTimer = 0;
     comboCount = 0;
+    currentLevel = 1;
+    bossFood = null;
     gameObjects = [];
     trampolines = [];
     gameOver = false;
     randomStartText();
     gameStarted = false;
+    backgroundColor = "#f0f8ff";
 }
 
 document.addEventListener('keydown', (e) => {
@@ -228,6 +255,19 @@ function update() {
         tramp.y = tramp.baseY + Math.sin(now * tramp.waveSpeed + tramp.waveOffset) * tramp.amplitude;
     });
 
+    // Boss movement
+    if (bossFood) {
+        bossFood.x -= backgroundSpeed;
+        if (detectCollision(player, bossFood)) {
+            currentLevel++;
+            backgroundColor = randomHexColor();
+            bossFood = null;
+        }
+        if (bossFood.x + bossFood.width < 0) {
+            bossFood = null;
+        }
+    }
+
     for (let i = gameObjects.length - 1; i >= 0; i--) {
         const obj = gameObjects[i];
         if (detectCollision(player, obj)) {
@@ -237,10 +277,10 @@ function update() {
                 score += 10;
                 motivationalText = quotes[Math.floor(Math.random() * quotes.length)];
                 motivationalTimer = 120;
-                backgroundSpeed += 0.5; // Background speeds up
-                playerSpeed += 0.2;     // Vegetables speed up slightly
+                backgroundSpeed += 0.5;
+                playerSpeed += 0.2;
                 if (player.frameSpeed > 5) {
-                    player.frameSpeed -= 0.2; // Player animation speeds up slowly
+                    player.frameSpeed -= 0.2;
                 }
             }
         }
@@ -257,6 +297,11 @@ function update() {
     trampolineTimer++;
     if (trampolineTimer % 200 === 0) {
         spawnTrampoline();
+    }
+
+    // Every 100 points spawn a boss if not already active
+    if (score >= currentLevel * 100 && !bossFood) {
+        spawnBossFood();
     }
 
     scoreTimer++;
@@ -285,7 +330,7 @@ function draw() {
 
     ctx.fillStyle = 'black';
     ctx.font = 'bold 16px sans-serif';
-    ctx.fillText("v1.4.5", width - 80, height - 20);
+    ctx.fillText("v1.5.0", width - 80, height - 20);
 
     if (!gameStarted) {
         ctx.fillStyle = 'black';
@@ -326,11 +371,16 @@ function draw() {
         ctx.drawImage(obj.img, obj.x, obj.y, obj.width, obj.height);
     });
 
+    if (bossFood) {
+        ctx.drawImage(bossFood.img, bossFood.x, bossFood.y, bossFood.width, bossFood.height);
+    }
+
     ctx.fillStyle = 'black';
     ctx.font = 'bold 24px sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('Health Score: ' + score, width / 2, 40);
     ctx.fillText('High Score: ' + highScore, width / 2, 70);
+    ctx.fillText('Level: ' + currentLevel, width / 2, 100);
 
     if (motivationalTimer > 0) {
         ctx.fillStyle = 'blue';
