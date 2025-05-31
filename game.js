@@ -51,30 +51,17 @@ const backgroundStartImage = loadImage('assets/background.svg');
 // Start Sound
 const startSound = new Audio('assets/start.mp3');
 
-// Motivational Quotes Generator
-function generateMotivationalQuote() {
-    const verbs = ["Run", "Push", "Jump", "Reach", "Stretch", "Lift", "Dream", "Hustle", "Move", "Shine", "Grow", "Thrive"];
-    const goals = ["health", "greatness", "tomorrow", "today", "happiness", "strength", "balance", "clarity"];
-    const endings = [
-        "every step counts.",
-        "you're unstoppable.",
-        "one breath at a time.",
-        "small victories build empires.",
-        "your best is yet to come.",
-        "fuel your fire.",
-        "make it happen.",
-        "believe and achieve.",
-        "no limits, only milestones."
-    ];
-
-    const verb = verbs[Math.floor(Math.random() * verbs.length)];
-    const goal = goals[Math.floor(Math.random() * goals.length)];
-    const ending = endings[Math.floor(Math.random() * endings.length)];
-
-    return `${verb} toward ${goal}, ${ending}`;
+// Responsive font size helper
+function getResponsiveFontSize(baseSize) {
+    if (width < 600) {
+        return baseSize * 0.6;
+    } else if (width < 900) {
+        return baseSize * 0.8;
+    }
+    return baseSize;
 }
 
-// Random HEX Color
+// Random HEX Color Generator
 function randomHexColor() {
     return '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
 }
@@ -122,7 +109,7 @@ let highScore = localStorage.getItem('highScore') || 0;
 const parallaxLayers = [];
 const layerSpeeds = [0.2, 0.5, 1.0];
 const shapesPerLayer = 30;
-const levelLength = 10000; // Length of level in pixels
+const levelLength = 10000;
 
 function randomColor() {
     const letters = '0123456789ABCDEF';
@@ -135,7 +122,6 @@ function randomColor() {
 
 function generateParallaxLayers() {
     parallaxLayers.length = 0;
-
     for (let i = 0; i < 3; i++) {
         const layer = [];
         for (let j = 0; j < shapesPerLayer; j++) {
@@ -155,12 +141,10 @@ function drawParallaxLayers(offset) {
     for (let i = 0; i < parallaxLayers.length; i++) {
         const speed = layerSpeeds[i];
         const layer = parallaxLayers[i];
-
         layer.forEach(shape => {
             ctx.save();
             ctx.translate(shape.x - offset * speed, shape.y);
             ctx.fillStyle = shape.color;
-
             if (shape.type === 'circle') {
                 ctx.beginPath();
                 ctx.arc(0, 0, shape.size / 2, 0, Math.PI * 2);
@@ -194,6 +178,100 @@ function randomStartText() {
 
 randomStartText();
 
+// Motivational Quotes Generator
+function generateMotivationalQuote() {
+    const quotes = [
+        "You can do it!",
+        "Sweat and Smile!",
+        "Every step counts!",
+        "Eat clean, stay fit!",
+        "One more carrot, one less worry!",
+        "Fuel your greatness!",
+        "Be stronger than your excuses!",
+        "Health is wealth!",
+        "Vegetables are victory!",
+        "Small steps, big change!",
+        "Make yourself proud!",
+        "Celebrate progress!",
+        "More veggies, more victories!",
+        "Healthy hustle!",
+        "Run like you mean it!"
+    ];
+    return quotes[Math.floor(Math.random() * quotes.length)];
+}
+
+// Start the Game
+function startGame() {
+    if (!gameStarted) {
+        gameStarted = true;
+        startSound.play();
+    } else if (gameOver) {
+        restartGame();
+    } else {
+        jump();
+    }
+}
+
+// Jump Logic
+function jump() {
+    if (gameStarted && !gameOver && player.jumpCount < player.maxJumps) {
+        const jumpBoost = 1 + (player.jumpCount * 0.2);
+        player.vy = player.jumpPower * jumpBoost;
+        player.jumpCount++;
+    }
+}
+
+// Restart Game
+function restartGame() {
+    backgroundSpeed = 6;
+    playerSpeed = 2.5;
+    score = 0;
+    scoreTimer = 0;
+    spawnTimer = 0;
+    trampolineTimer = 0;
+    comboCount = 0;
+    currentLevel = 1;
+    bossFood = null;
+    gameObjects = [];
+    trampolines = [];
+    gameOver = false;
+    randomStartText();
+    gameStarted = false;
+    backgroundColor = "#f0f8ff";
+}
+
+// Keyboard / Touch Controls
+document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') {
+        startGame();
+    }
+});
+document.addEventListener('touchstart', () => {
+    startGame();
+});
+document.addEventListener('mousedown', () => {
+    startGame();
+});
+
+// Collision Detection
+function detectCollision(a, b) {
+    return a.x < b.x + b.width &&
+           a.x + a.width > b.x &&
+           a.y < b.y + b.height &&
+           a.y + a.height > b.y;
+}
+
+// Trampoline Collision
+function checkTrampolineCollision() {
+    trampolines.forEach(tramp => {
+        if (detectCollision(player, tramp) && player.vy >= 0) {
+            player.vy = player.jumpPower * 1.5;
+            player.jumpCount = 0;
+        }
+    });
+}
+
+// Spawn Elements
 function spawnCollectible() {
     const col = {
         type: "collectible",
@@ -230,79 +308,14 @@ function spawnBossFood() {
     };
 }
 
-function jump() {
-    if (gameStarted && !gameOver && player.jumpCount < player.maxJumps) {
-        const jumpBoost = 1 + (player.jumpCount * 0.2);
-        player.vy = player.jumpPower * jumpBoost;
-        player.jumpCount++;
-    }
-}
-
-function startGame() {
-    if (!gameStarted) {
-        gameStarted = true;
-        startSound.play();
-    } else if (gameOver) {
-        restartGame();
-    } else {
-        jump();
-    }
-}
-
-function restartGame() {
-    backgroundSpeed = 6;
-    playerSpeed = 2.5;
-    player.frameSpeed = 12;
-    score = 0;
-    scoreTimer = 0;
-    spawnTimer = 0;
-    trampolineTimer = 0;
-    comboCount = 0;
-    currentLevel = 1;
-    bossFood = null;
-    gameObjects = [];
-    trampolines = [];
-    gameOver = false;
-    randomStartText();
-    gameStarted = false;
-    backgroundColor = "#f0f8ff";
-    generateParallaxLayers();
-}
-
-document.addEventListener('keydown', (e) => {
-    if (e.code === 'Space') {
-        startGame();
-    }
-});
-
-document.addEventListener('touchstart', () => {
-    startGame();
-});
-
-document.addEventListener('mousedown', () => {
-    startGame();
-});
-
-function detectCollision(a, b) {
-    return a.x < b.x + b.width &&
-           a.x + a.width > b.x &&
-           a.y < b.y + b.height &&
-           a.y + a.height > b.y;
-}
-
-function checkTrampolineCollision() {
-    trampolines.forEach(tramp => {
-        if (detectCollision(player, tramp) && player.vy >= 0) {
-            player.vy = player.jumpPower * 1.5;
-            player.jumpCount = 0;
-        }
-    });
-}
-
+// Update Game State
 function update() {
     if (!gameStarted || gameOver) return;
 
-    backgroundX += backgroundSpeed; // now scrolling right for effect
+    backgroundX -= backgroundSpeed;
+    if (backgroundX <= -width) {
+        backgroundX = 0;
+    }
 
     player.vy += player.gravity;
     player.y += player.vy;
@@ -331,10 +344,6 @@ function update() {
             currentLevel++;
             backgroundColor = randomHexColor();
             bossFood = null;
-            generateParallaxLayers();
-            if (player.frameSpeed > 4) {
-                player.frameSpeed -= 0.2;
-            }
         }
         if (bossFood && bossFood.x + bossFood.width < 0) {
             bossFood = null;
@@ -383,6 +392,7 @@ function update() {
     }
 }
 
+// Draw the Game
 function draw() {
     ctx.clearRect(0, 0, width, height);
 
@@ -391,24 +401,20 @@ function draw() {
     } else {
         ctx.fillStyle = backgroundColor;
         ctx.fillRect(0, 0, width, height);
-
-        drawParallaxLayers(backgroundX);
     }
 
-    ctx.fillStyle = 'black';
-    ctx.font = 'bold 16px sans-serif';
-    ctx.fillText("v1.6.3", width - 80, height - 20);
+    drawParallaxLayers(backgroundX);
 
     if (!gameStarted) {
         ctx.fillStyle = 'black';
-        ctx.font = 'bold 28px sans-serif';
+        ctx.font = `bold ${getResponsiveFontSize(28)}px sans-serif`;
         ctx.textAlign = 'center';
         ctx.fillText(startText, width / 2, height / 2);
 
         ctx.drawImage(playerIdle, width / 2 - 100, height - 300, 200, 200);
 
         ctx.fillStyle = 'darkgreen';
-        ctx.font = 'bold 32px sans-serif';
+        ctx.font = `bold ${getResponsiveFontSize(32)}px sans-serif`;
         ctx.fillText('Tap to Start', width / 2, height / 2 + 150);
         return;
     }
@@ -443,24 +449,23 @@ function draw() {
     }
 
     ctx.fillStyle = 'black';
-    ctx.font = 'bold 24px sans-serif';
-    ctx.textAlign = 'center';
+    ctx.font = `bold ${getResponsiveFontSize(24)}px sans-serif`;
     ctx.fillText('Health Score: ' + score, width / 2, 40);
     ctx.fillText('High Score: ' + highScore, width / 2, 70);
     ctx.fillText('Level: ' + currentLevel, width / 2, 100);
 
     if (motivationalTimer > 0) {
         ctx.fillStyle = 'blue';
-        ctx.font = 'bold 28px sans-serif';
+        ctx.font = `bold ${getResponsiveFontSize(28)}px sans-serif`;
         ctx.fillText(motivationalText, width / 2, height / 2 - 100);
     }
 }
 
+// Game Loop
 function gameLoop() {
     update();
     draw();
     requestAnimationFrame(gameLoop);
 }
 
-generateParallaxLayers();
 gameLoop();
