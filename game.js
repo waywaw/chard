@@ -48,15 +48,8 @@ const bossFoods = [
 
 const backgroundStartImage = loadImage('assets/background.svg');
 
-// 🔊 Sounds
+// 🔊 Start Sound
 const startSound = new Audio('assets/start.mp3');
-const collectSound = new Audio('assets/collect.mp3');
-
-// 🎵 Safe play function
-function playSound(sound) {
-    const clone = sound.cloneNode();
-    clone.play();
-}
 
 // 📝 Infinite Motivational Quote Generator
 function generateMotivationalQuote() {
@@ -101,7 +94,7 @@ const player = {
     gravity: 1.2,
     jumpPower: -18,
     jumpCount: 0,
-    maxJumps: 3,
+    maxJumps: 4, // 🆕 QUADRUPLE jumps!
     frameIndex: 0,
     frameSpeed: 12, // Start slow
     frameCounter: 0,
@@ -186,7 +179,7 @@ function jump() {
 function startGame() {
     if (!gameStarted) {
         gameStarted = true;
-        startSound.play(); // 🔊 Play start sound
+        startSound.play();
     } else if (gameOver) {
         restartGame();
     } else {
@@ -197,7 +190,7 @@ function startGame() {
 function restartGame() {
     backgroundSpeed = 6;
     playerSpeed = 2.5;
-    player.frameSpeed = 12; // Reset to slow start
+    player.frameSpeed = 12;
     score = 0;
     scoreTimer = 0;
     spawnTimer = 0;
@@ -298,7 +291,6 @@ function update() {
                 motivationalTimer = 120;
                 backgroundSpeed += 0.05;
                 playerSpeed += 0.05;
-                playSound(collectSound); // 🔊 Play collect sound
             }
         }
     }
