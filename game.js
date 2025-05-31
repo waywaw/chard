@@ -51,62 +51,27 @@ const backgroundStartImage = loadImage('assets/background.svg');
 // Start Sound
 const startSound = new Audio('assets/start.mp3');
 
-// ✨ Real and Random Motivational Quotes
-const realQuotes = [
-    "The journey of a thousand miles begins with one step. — Lao Tzu",
-    "Believe you can and you're halfway there. — Theodore Roosevelt",
-    "The only way to do great work is to love what you do. — Steve Jobs",
-    "Strength does not come from physical capacity. It comes from an indomitable will. — Mahatma Gandhi",
-    "The future depends on what you do today. — Mahatma Gandhi",
-    "Well done is better than well said. — Benjamin Franklin",
-    "It always seems impossible until it's done. — Nelson Mandela",
-    "Act as if what you do makes a difference. It does. — William James",
-    "What you get by achieving your goals is not as important as what you become by achieving your goals. — Zig Ziglar",
-    "Don’t watch the clock; do what it does. Keep going. — Sam Levenson",
-    "You miss 100% of the shots you don’t take. — Wayne Gretzky",
-    "A year from now you may wish you had started today. — Karen Lamb",
-    "Dream big and dare to fail. — Norman Vaughan",
-    "Perseverance is not a long race; it's many short races one after the other. — Walter Elliot",
-    "The harder you work for something, the greater you'll feel when you achieve it.",
-    "Push yourself, because no one else is going to do it for you.",
-    "Success doesn’t just find you. You have to go out and get it.",
-    "Dream it. Wish it. Do it.",
-    "Great things never come from comfort zones.",
-    "Wake up with determination. Go to bed with satisfaction."
-];
-
-// ✨ Randomized Quote Builder
-const randomPhrases = {
-    starts: [
-        "Run", "Push", "Jump", "Reach", "Stretch", "Lift", "Dream", "Hustle", "Move", "Shine", "Grow", "Thrive", "Leap", "Glide"
-    ],
-    goals: [
-        "health", "greatness", "happiness", "strength", "balance", "clarity", "peace", "focus", "purpose", "joy", "freedom"
-    ],
-    endings: [
-        "every step counts.", "you're unstoppable.", "one breath at a time.", "small victories build empires.",
-        "your best is yet to come.", "fuel your fire.", "make it happen.", "believe and achieve.",
-        "no limits, only milestones.", "step by step, day by day."
-    ],
-    formats: [
-        (v, g, e) => `${v} toward ${g}, ${e}`,
-        (v, g, e) => `To ${g}, ${v.toLowerCase()} bravely — ${e}`,
-        (v, g, e) => `${v} higher. Reach for ${g}. Remember: ${e}`
-    ]
-};
-
+// Motivational Quotes Generator
 function generateMotivationalQuote() {
-    if (Math.random() < 0.5) {
-        // 50% chance real quote
-        return realQuotes[Math.floor(Math.random() * realQuotes.length)];
-    } else {
-        // 50% chance random quote
-        const verb = randomPhrases.starts[Math.floor(Math.random() * randomPhrases.starts.length)];
-        const goal = randomPhrases.goals[Math.floor(Math.random() * randomPhrases.goals.length)];
-        const ending = randomPhrases.endings[Math.floor(Math.random() * randomPhrases.endings.length)];
-        const format = randomPhrases.formats[Math.floor(Math.random() * randomPhrases.formats.length)];
-        return format(verb, goal, ending);
-    }
+    const verbs = ["Run", "Push", "Jump", "Reach", "Stretch", "Lift", "Dream", "Hustle", "Move", "Shine", "Grow", "Thrive"];
+    const goals = ["health", "greatness", "tomorrow", "today", "happiness", "strength", "balance", "clarity"];
+    const endings = [
+        "every step counts.",
+        "you're unstoppable.",
+        "one breath at a time.",
+        "small victories build empires.",
+        "your best is yet to come.",
+        "fuel your fire.",
+        "make it happen.",
+        "believe and achieve.",
+        "no limits, only milestones."
+    ];
+
+    const verb = verbs[Math.floor(Math.random() * verbs.length)];
+    const goal = goals[Math.floor(Math.random() * goals.length)];
+    const ending = endings[Math.floor(Math.random() * endings.length)];
+
+    return `${verb} toward ${goal}, ${ending}`;
 }
 
 // Random HEX Color
@@ -157,7 +122,7 @@ let highScore = localStorage.getItem('highScore') || 0;
 const parallaxLayers = [];
 const layerSpeeds = [0.2, 0.5, 1.0];
 const shapesPerLayer = 30;
-const levelLength = 10000; // Level distance
+const levelLength = 10000; // Length of level in pixels
 
 function randomColor() {
     const letters = '0123456789ABCDEF';
@@ -218,6 +183,7 @@ function drawParallaxLayers(offset) {
 function randomStartText() {
     const starts = [
         "Run for your health.",
+        "Lower cholesterol.",
         "Stay alive. The run never ends.",
         "Each step is a win.",
         "Healthy life, happy life.",
@@ -228,4 +194,273 @@ function randomStartText() {
 
 randomStartText();
 
-// [Game Functions — SPAN Limit]
+function spawnCollectible() {
+    const col = {
+        type: "collectible",
+        img: collectibles[Math.floor(Math.random() * collectibles.length)],
+        x: width,
+        y: Math.random() * (height - 250) + 200,
+        width: 80 + Math.random() * 20,
+        height: 80 + Math.random() * 20,
+        speed: 5
+    };
+    gameObjects.push(col);
+}
+
+function spawnTrampoline() {
+    trampolines.push({
+        x: width,
+        baseY: height - 100,
+        width: 100,
+        height: 30,
+        amplitude: 20 + Math.random() * 40,
+        waveSpeed: 0.5 + Math.random(),
+        waveOffset: Math.random() * Math.PI * 2
+    });
+}
+
+function spawnBossFood() {
+    bossFood = {
+        img: bossFoods[Math.floor(Math.random() * bossFoods.length)],
+        x: width,
+        y: height - 300,
+        width: 300,
+        height: 300,
+        speed: 6
+    };
+}
+
+function jump() {
+    if (gameStarted && !gameOver && player.jumpCount < player.maxJumps) {
+        const jumpBoost = 1 + (player.jumpCount * 0.2);
+        player.vy = player.jumpPower * jumpBoost;
+        player.jumpCount++;
+    }
+}
+
+function startGame() {
+    if (!gameStarted) {
+        gameStarted = true;
+        startSound.play();
+    } else if (gameOver) {
+        restartGame();
+    } else {
+        jump();
+    }
+}
+
+function restartGame() {
+    backgroundSpeed = 6;
+    playerSpeed = 2.5;
+    player.frameSpeed = 12;
+    score = 0;
+    scoreTimer = 0;
+    spawnTimer = 0;
+    trampolineTimer = 0;
+    comboCount = 0;
+    currentLevel = 1;
+    bossFood = null;
+    gameObjects = [];
+    trampolines = [];
+    gameOver = false;
+    randomStartText();
+    gameStarted = false;
+    backgroundColor = "#f0f8ff";
+    generateParallaxLayers();
+}
+
+document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') {
+        startGame();
+    }
+});
+
+document.addEventListener('touchstart', () => {
+    startGame();
+});
+
+document.addEventListener('mousedown', () => {
+    startGame();
+});
+
+function detectCollision(a, b) {
+    return a.x < b.x + b.width &&
+           a.x + a.width > b.x &&
+           a.y < b.y + b.height &&
+           a.y + a.height > b.y;
+}
+
+function checkTrampolineCollision() {
+    trampolines.forEach(tramp => {
+        if (detectCollision(player, tramp) && player.vy >= 0) {
+            player.vy = player.jumpPower * 1.5;
+            player.jumpCount = 0;
+        }
+    });
+}
+
+function update() {
+    if (!gameStarted || gameOver) return;
+
+    backgroundX += backgroundSpeed; // now scrolling right for effect
+
+    player.vy += player.gravity;
+    player.y += player.vy;
+
+    if (player.y + player.height > height - 50) {
+        player.y = height - 50 - player.height;
+        player.vy = 0;
+        player.jumpCount = 0;
+    }
+
+    checkTrampolineCollision();
+
+    gameObjects.forEach(obj => {
+        obj.x -= obj.speed + (backgroundSpeed * 0.3);
+    });
+
+    trampolines.forEach(tramp => {
+        tramp.x -= backgroundSpeed;
+        const now = Date.now() / 1000;
+        tramp.y = tramp.baseY + Math.sin(now * tramp.waveSpeed + tramp.waveOffset) * tramp.amplitude;
+    });
+
+    if (bossFood) {
+        bossFood.x -= backgroundSpeed;
+        if (detectCollision(player, bossFood)) {
+            currentLevel++;
+            backgroundColor = randomHexColor();
+            bossFood = null;
+            generateParallaxLayers();
+            if (player.frameSpeed > 4) {
+                player.frameSpeed -= 0.2;
+            }
+        }
+        if (bossFood && bossFood.x + bossFood.width < 0) {
+            bossFood = null;
+        }
+    }
+
+    for (let i = gameObjects.length - 1; i >= 0; i--) {
+        const obj = gameObjects[i];
+        if (detectCollision(player, obj)) {
+            if (obj.type === "collectible") {
+                gameObjects.splice(i, 1);
+                comboCount++;
+                score += 10;
+                motivationalText = generateMotivationalQuote();
+                motivationalTimer = 120;
+                backgroundSpeed += 0.05;
+                playerSpeed += 0.05;
+            }
+        }
+    }
+
+    gameObjects = gameObjects.filter(obj => obj.x + obj.width > 0);
+    trampolines = trampolines.filter(tramp => tramp.x + tramp.width > 0);
+
+    spawnTimer++;
+    if (spawnTimer % 50 === 0) {
+        spawnCollectible();
+    }
+
+    trampolineTimer++;
+    if (trampolineTimer % 200 === 0) {
+        spawnTrampoline();
+    }
+
+    if (score >= currentLevel * 100 && !bossFood) {
+        spawnBossFood();
+    }
+
+    scoreTimer++;
+    if (scoreTimer % 60 === 0) {
+        score++;
+    }
+
+    if (motivationalTimer > 0) {
+        motivationalTimer--;
+    }
+}
+
+function draw() {
+    ctx.clearRect(0, 0, width, height);
+
+    if (!gameStarted) {
+        ctx.drawImage(backgroundStartImage, 0, 0, width, height);
+    } else {
+        ctx.fillStyle = backgroundColor;
+        ctx.fillRect(0, 0, width, height);
+
+        drawParallaxLayers(backgroundX);
+    }
+
+    ctx.fillStyle = 'black';
+    ctx.font = 'bold 16px sans-serif';
+    ctx.fillText("v1.6.3", width - 80, height - 20);
+
+    if (!gameStarted) {
+        ctx.fillStyle = 'black';
+        ctx.font = 'bold 28px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(startText, width / 2, height / 2);
+
+        ctx.drawImage(playerIdle, width / 2 - 100, height - 300, 200, 200);
+
+        ctx.fillStyle = 'darkgreen';
+        ctx.font = 'bold 32px sans-serif';
+        ctx.fillText('Tap to Start', width / 2, height / 2 + 150);
+        return;
+    }
+
+    trampolines.forEach(tramp => {
+        ctx.fillStyle = 'blue';
+        ctx.fillRect(tramp.x, tramp.y, tramp.width, tramp.height);
+    });
+
+    let playerImage;
+    if (player.vy < 0) {
+        playerImage = playerJumpMid;
+    } else if (player.vy > 0 && player.jumpCount > 0) {
+        playerImage = playerJumpFall;
+    } else {
+        player.frameCounter += playerSpeed;
+        if (player.frameCounter >= player.frameSpeed) {
+            player.frameIndex = (player.frameIndex + 1) % playerRunFrames.length;
+            player.frameCounter = 0;
+        }
+        playerImage = playerRunFrames[player.frameIndex];
+    }
+
+    ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
+
+    gameObjects.forEach(obj => {
+        ctx.drawImage(obj.img, obj.x, obj.y, obj.width, obj.height);
+    });
+
+    if (bossFood && bossFood.img) {
+        ctx.drawImage(bossFood.img, bossFood.x, bossFood.y, bossFood.width, bossFood.height);
+    }
+
+    ctx.fillStyle = 'black';
+    ctx.font = 'bold 24px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Health Score: ' + score, width / 2, 40);
+    ctx.fillText('High Score: ' + highScore, width / 2, 70);
+    ctx.fillText('Level: ' + currentLevel, width / 2, 100);
+
+    if (motivationalTimer > 0) {
+        ctx.fillStyle = 'blue';
+        ctx.font = 'bold 28px sans-serif';
+        ctx.fillText(motivationalText, width / 2, height / 2 - 100);
+    }
+}
+
+function gameLoop() {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+
+generateParallaxLayers();
+gameLoop();
