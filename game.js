@@ -14,7 +14,7 @@ window.addEventListener('resize', () => {
 });
 
 // Version display
-const version = "v1.3.5";
+const version = "v1.3.6";
 
 // Load Images
 const loadImage = (src) => {
@@ -294,62 +294,12 @@ function update() {
         plat.x -= backgroundSpeed;
     });
 
-    for (let i = gameObjects.length - 1; i >= 0; i--) {
-        const obj = gameObjects[i];
-
-        if (obj.x + obj.width < 0) {
-            gameObjects.splice(i, 1);
-            continue;
-        }
-
-        if (detectCollision(player, obj)) {
-            if (obj.type === "collectible") {
-                gameObjects.splice(i, 1);
-                comboCount++;
-                if (comboCount % 5 === 0) {
-                    score += 50;
-                }
-                if (comboCount >= 10 && !rainbowMode) {
-                    rainbowMode = true;
-                    rainbowTimer = 600;
-                }
-                let points = rainbowMode ? 20 : 10;
-                if (speedBoostMode) points *= 2;
-                score += points;
-                motivationalText = quotes[Math.floor(Math.random() * quotes.length)];
-                motivationalTimer = 120;
-                backgroundSpeed += 0.5;
-                playerSpeed += 0.3;
-            } else if (obj.type === "obstacle") {
-                gameObjects.splice(i, 1);
-                comboCount = 0;
-                rainbowMode = false;
-                rainbowTimer = 0;
-                magnetMode = false;
-                magnetTimer = 0;
-                speedBoostMode = false;
-                speedBoostTimer = 0;
-                score = Math.max(0, score - 5);
-                backgroundSpeed -= 1;
-                playerSpeed -= 0.5;
-                if (backgroundSpeed < minSpeed) {
-                    triggerGameOver();
-                }
-            } else if (obj.type === "powerup") {
-                gameObjects.splice(i, 1);
-                if (Math.random() < 0.5) {
-                    magnetMode = true;
-                    magnetTimer = 600;
-                } else {
-                    speedBoostMode = true;
-                    speedBoostTimer = 300;
-                }
-            }
-        }
-    }
+    // ✅ Remove old objects
+    gameObjects = gameObjects.filter(obj => obj.x + obj.width > 0);
+    platforms = platforms.filter(plat => plat.x + plat.width > 0);
 
     spawnTimer++;
-    if (spawnTimer % 50 === 0) { // SLOWER SPAWN RATE!
+    if (spawnTimer % 50 === 0) {
         if (Math.random() < 0.7) {
             spawnCollectible();
         } else if (Math.random() < 0.2) {
