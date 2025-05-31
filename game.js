@@ -94,9 +94,9 @@ const player = {
     gravity: 1.2,
     jumpPower: -18,
     jumpCount: 0,
-    maxJumps: 4, 
+    maxJumps: 4, // 🆕 Quadruple jumps
     frameIndex: 0,
-    frameSpeed: 12, 
+    frameSpeed: 12, // Start slow
     frameCounter: 0,
 };
 
@@ -118,11 +118,6 @@ let startText = "";
 let comboCount = 0;
 let gameOver = false;
 let highScore = localStorage.getItem('highScore') || 0;
-
-// NEW: Charge jump states
-let isCharging = false;
-let chargeTime = 0;
-const maxCharge = 100; // max frames to charge
 
 function randomStartText() {
     const starts = [
@@ -174,21 +169,12 @@ function spawnBossFood() {
     };
 }
 
+// 🚀 Jump: higher with each jump
 function jump() {
     if (gameStarted && !gameOver && player.jumpCount < player.maxJumps) {
-        const jumpBoost = 1 + (player.jumpCount * 0.2);
+        const jumpBoost = 1 + (player.jumpCount * 0.2); // 🆙 Each jump gets 20% stronger
         player.vy = player.jumpPower * jumpBoost;
         player.jumpCount++;
-    }
-}
-
-function chargedJump() {
-    if (gameStarted && !gameOver && player.jumpCount < player.maxJumps) {
-        const boost = 1 + (chargeTime / maxCharge); // Charge-based multiplier
-        player.vy = player.jumpPower * boost * 1.5; // More powerful than normal jump
-        player.jumpCount++;
-        chargeTime = 0;
-        isCharging = false;
     }
 }
 
@@ -198,6 +184,8 @@ function startGame() {
         startSound.play();
     } else if (gameOver) {
         restartGame();
+    } else {
+        jump();
     }
 }
 
@@ -222,45 +210,16 @@ function restartGame() {
 
 document.addEventListener('keydown', (e) => {
     if (e.code === 'Space') {
-        isCharging = true;
+        startGame();
     }
 });
 
-document.addEventListener('keyup', (e) => {
-    if (e.code === 'Space') {
-        if (isCharging) {
-            chargedJump();
-        } else {
-            jump();
-        }
-        isCharging = false;
-    }
-});
-
-document.addEventListener('touchstart', (e) => {
-    isCharging = true;
-});
-
-document.addEventListener('touchend', (e) => {
-    if (isCharging) {
-        chargedJump();
-    } else {
-        jump();
-    }
-    isCharging = false;
+document.addEventListener('touchstart', () => {
+    startGame();
 });
 
 document.addEventListener('mousedown', () => {
-    isCharging = true;
-});
-
-document.addEventListener('mouseup', () => {
-    if (isCharging) {
-        chargedJump();
-    } else {
-        jump();
-    }
-    isCharging = false;
+    startGame();
 });
 
 function detectCollision(a, b) {
@@ -281,10 +240,6 @@ function checkTrampolineCollision() {
 
 function update() {
     if (!gameStarted || gameOver) return;
-
-    if (isCharging && chargeTime < maxCharge) {
-        chargeTime++;
-    }
 
     backgroundX -= backgroundSpeed;
     if (backgroundX <= -width) {
@@ -389,7 +344,7 @@ function draw() {
 
     ctx.fillStyle = 'black';
     ctx.font = 'bold 16px sans-serif';
-    ctx.fillText("v1.5.8", width - 80, height - 20);
+    ctx.fillText("v1.5.7", width - 80, height - 20);
 
     if (!gameStarted) {
         ctx.fillStyle = 'black';
@@ -411,9 +366,7 @@ function draw() {
     });
 
     let playerImage;
-    if (isCharging) {
-        playerImage = playerJumpStart; // crouch pose
-    } else if (player.vy < 0) {
+    if (player.vy < 0) {
         playerImage = playerJumpMid;
     } else if (player.vy > 0 && player.jumpCount > 0) {
         playerImage = playerJumpFall;
