@@ -14,7 +14,7 @@ window.addEventListener('resize', () => {
 });
 
 // Version display
-const version = "v1.3.7";
+const version = "v1.3.8";
 
 // Load Images
 const loadImage = (src) => {
@@ -136,12 +136,19 @@ function randomStartText() {
 
 randomStartText();
 
+// ✅ Fix spawn Y to be waist height and higher
+function getSpawnY() {
+    // Top half of the screen, not too low
+    const waistLevel = height / 2 - 100; // Upper 50% of screen
+    return Math.random() * (waistLevel - 100);
+}
+
 function spawnObstacle() {
     const obs = {
         type: "obstacle",
         img: obstacles[Math.floor(Math.random() * obstacles.length)],
         x: width,
-        y: Math.random() * (height - 200) + 200,
+        y: getSpawnY(),
         width: Math.floor(Math.random() * 20) + 80,
         height: Math.floor(Math.random() * 20) + 80,
         speed: 6
@@ -154,7 +161,7 @@ function spawnCollectible() {
         type: "collectible",
         img: collectibles[Math.floor(Math.random() * collectibles.length)],
         x: width,
-        y: Math.random() * (height - 200) + 200,
+        y: getSpawnY(),
         width: Math.floor(Math.random() * 20) + 80,
         height: Math.floor(Math.random() * 20) + 80,
         speed: 5
@@ -167,7 +174,7 @@ function spawnPowerUp() {
         type: "powerup",
         img: powerups[0],
         x: width,
-        y: Math.random() * (height - 200) + 200,
+        y: getSpawnY(),
         width: 60,
         height: 60,
         speed: 5
@@ -258,14 +265,11 @@ function update() {
         obj.x -= obj.speed;
     });
 
+    // ✅ Memory Cleanup — remove objects that are offscreen left
+    gameObjects = gameObjects.filter(obj => obj.x + obj.width > 0);
+
     for (let i = gameObjects.length - 1; i >= 0; i--) {
         const obj = gameObjects[i];
-
-        if (obj.x + obj.width < 0) {
-            gameObjects.splice(i, 1);
-            continue;
-        }
-
         if (detectCollision(player, obj)) {
             if (obj.type === "collectible") {
                 gameObjects.splice(i, 1);
@@ -313,7 +317,7 @@ function update() {
     }
 
     spawnTimer++;
-    if (spawnTimer % 50 === 0) { // ← Slower spawn: was 30, now 50
+    if (spawnTimer % 50 === 0) {
         if (Math.random() < 0.7) {
             spawnCollectible();
         } else if (Math.random() < 0.2) {
