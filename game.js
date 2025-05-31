@@ -27,6 +27,11 @@ const splatSound = new Audio('assets/splat.mp3');
 const startSound = new Audio('assets/start.mp3');
 const gameOverSound = new Audio('assets/gameover.mp3');
 
+function playSound(sound) {
+    const clone = sound.cloneNode();
+    clone.play();
+}
+
 const playerRunFrames = [
     loadImage('assets/run1.svg'),
     loadImage('assets/run2.svg'),
@@ -74,7 +79,8 @@ const quotes = [
 ];
 
 let backgroundX = 0;
-let baseSpeed = 6;
+let backgroundSpeed = 2;
+let playerSpeed = 1;
 const minSpeed = 2;
 
 const player = {
@@ -83,8 +89,8 @@ const player = {
     width: 200,
     height: 200,
     vy: 0,
-    gravity: 1.5,
-    jumpPower: -20,
+    gravity: 1.2,
+    jumpPower: -18,
     jumpCount: 0,
     maxJumps: 3,
     frameIndex: 0,
@@ -102,6 +108,10 @@ let scoreTimer = 0;
 let motivationalText = "";
 let motivationalTimer = 0;
 let startText = "";
+
+let comboCount = 0;
+let rainbowMode = false;
+let rainbowTimer = 0;
 
 let gameOver = false;
 
@@ -125,10 +135,10 @@ function spawnObstacle() {
         type: "obstacle",
         img: obstacles[Math.floor(Math.random() * obstacles.length)],
         x: width,
-        y: Math.random() * (height - 300) + 100,
-        width: Math.floor(Math.random() * 40) + 120,
-        height: Math.floor(Math.random() * 40) + 120,
-        speed: baseSpeed + Math.random() * 2
+        y: Math.random() * (height - 200) + 200,
+        width: Math.floor(Math.random() * 20) + 80,
+        height: Math.floor(Math.random() * 20) + 80,
+        speed: 6
     };
     gameObjects.push(obs);
 }
@@ -138,10 +148,10 @@ function spawnCollectible() {
         type: "collectible",
         img: collectibles[Math.floor(Math.random() * collectibles.length)],
         x: width,
-        y: Math.random() * (height - 400) + 100,
-        width: Math.floor(Math.random() * 40) + 120,
-        height: Math.floor(Math.random() * 40) + 120,
-        speed: baseSpeed + Math.random() * 2
+        y: Math.random() * (height - 200) + 200,
+        width: Math.floor(Math.random() * 20) + 80,
+        height: Math.floor(Math.random() * 20) + 80,
+        speed: 6
     };
     gameObjects.push(col);
 }
@@ -150,14 +160,14 @@ function jump() {
     if (gameStarted && !gameOver && player.jumpCount < player.maxJumps) {
         player.vy = player.jumpPower;
         player.jumpCount++;
-        jumpSound.play();
+        playSound(jumpSound);
     }
 }
 
 function startGame() {
     if (!gameStarted) {
         gameStarted = true;
-        startSound.play();
+        playSound(startSound);
     } else if (gameOver) {
         restartGame();
     } else {
@@ -166,11 +176,14 @@ function startGame() {
 }
 
 function restartGame() {
-    // Reset everything
-    baseSpeed = 6;
+    backgroundSpeed = 2;
+    playerSpeed = 1;
     score = 0;
     scoreTimer = 0;
     spawnTimer = 0;
+    comboCount = 0;
+    rainbowMode = false;
+    rainbowTimer = 0;
     gameObjects = [];
     gameOver = false;
     randomStartText();
@@ -201,7 +214,7 @@ function detectCollision(a, b) {
 function update() {
     if (!gameStarted || gameOver) return;
 
-    backgroundX -= 2;
+    backgroundX -= backgroundSpeed;
     if (backgroundX <= -width) {
         backgroundX = 0;
     }
@@ -230,19 +243,33 @@ function update() {
         if (detectCollision(player, obj)) {
             if (obj.type === "collectible") {
                 gameObjects.splice(i, 1);
-                score += 10;
+                comboCount++;
+                if (comboCount % 5 === 0) {
+                    score += 50; // Bonus points!
+                }
+                if (comboCount >= 10 && !rainbowMode) {
+                    rainbowMode = true;
+                    rainbowTimer = 600; // ~10 seconds at 60FPS
+                }
+                let points = rainbowMode ? 20 : 10;
+                score += points;
                 motivationalText = quotes[Math.floor(Math.random() * quotes.length)];
-                motivationalTimer = 120; // Show for 2 seconds
-                baseSpeed += 1; // Speed up
-                collectSound.play();
+                motivationalTimer = 120;
+                backgroundSpeed += 0.5;
+                playerSpeed += 0.2;
+                playSound(collectSound);
             } else if (obj.type === "obstacle") {
                 gameObjects.splice(i, 1);
-                score = Math.max(0, score - 5); // Lose some score
-                baseSpeed -= 2; // Slow down
-                splatSound.play();
-                if (baseSpeed < minSpeed) {
+                comboCount = 0; // Reset combo
+                rainbowMode = false; // Cancel rainbow mode
+                rainbowTimer = 0;
+                score = Math.max(0, score - 5);
+                backgroundSpeed -= 1;
+                playerSpeed -= 0.5;
+                if (backgroundSpeed < minSpeed) {
                     triggerGameOver();
                 }
+                playSound(splatSound);
             }
         }
     }
@@ -264,18 +291,41 @@ function update() {
     if (motivationalTimer > 0) {
         motivationalTimer--;
     }
+
+    if (rainbowMode) {
+        rainbowTimer--;
+        if (rainbowTimer <= 0) {
+            rainbowMode = false;
+        }
+    }
 }
 
 function triggerGameOver() {
     gameOver = true;
-    gameOverSound.play();
+    playSound(gameOverSound);
+}
+
+function drawRainbowBackground() {
+    const gradient = ctx.createLinearGradient(0, 0, width, height);
+    gradient.addColorStop(0, 'red');
+    gradient.addColorStop(0.2, 'orange');
+    gradient.addColorStop(0.4, 'yellow');
+    gradient.addColorStop(0.6, 'green');
+    gradient.addColorStop(0.8, 'blue');
+    gradient.addColorStop(1, 'violet');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, width, height);
 }
 
 function draw() {
     ctx.clearRect(0, 0, width, height);
 
-    ctx.drawImage(backgroundImage, backgroundX, 0, width, height);
-    ctx.drawImage(backgroundImage, backgroundX + width, 0, width, height);
+    if (rainbowMode) {
+        drawRainbowBackground();
+    } else {
+        ctx.drawImage(backgroundImage, backgroundX, 0, width, height);
+        ctx.drawImage(backgroundImage, backgroundX + width, 0, width, height);
+    }
 
     if (!gameStarted) {
         ctx.fillStyle = 'black';
@@ -297,7 +347,7 @@ function draw() {
     } else if (player.vy > 0 && player.jumpCount > 0) {
         playerImage = playerJumpFall;
     } else {
-        player.frameCounter++;
+        player.frameCounter += playerSpeed;
         if (player.frameCounter >= player.frameSpeed) {
             player.frameIndex = (player.frameIndex + 1) % playerRunFrames.length;
             player.frameCounter = 0;
@@ -320,6 +370,18 @@ function draw() {
         ctx.fillStyle = 'blue';
         ctx.font = 'bold 28px sans-serif';
         ctx.fillText(motivationalText, width / 2, height / 2 - 100);
+    }
+
+    if (comboCount > 1) {
+        ctx.fillStyle = 'purple';
+        ctx.font = 'bold 24px sans-serif';
+        ctx.fillText('Combo: ' + comboCount, width / 2, 80);
+    }
+
+    if (rainbowMode) {
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 24px sans-serif';
+        ctx.fillText('RAINBOW MODE!', width / 2, 120);
     }
 
     if (gameOver) {
