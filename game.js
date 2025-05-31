@@ -167,7 +167,6 @@ function drawParallaxLayers(offset) {
 function randomStartText() {
     const starts = [
         "Run for your health.",
-        "Lower cholesterol.",
         "Stay alive. The run never ends.",
         "Each step is a win.",
         "Healthy life, happy life.",
@@ -205,6 +204,7 @@ function startGame() {
     if (!gameStarted) {
         gameStarted = true;
         startSound.play();
+        generateParallaxLayers(); // New parallax for new run
     } else if (gameOver) {
         restartGame();
     } else {
@@ -343,6 +343,7 @@ function update() {
         if (detectCollision(player, bossFood)) {
             currentLevel++;
             backgroundColor = randomHexColor();
+            generateParallaxLayers(); // New parallax on level up
             bossFood = null;
         }
         if (bossFood && bossFood.x + bossFood.width < 0) {
@@ -416,6 +417,10 @@ function draw() {
         ctx.fillStyle = 'darkgreen';
         ctx.font = `bold ${getResponsiveFontSize(32)}px sans-serif`;
         ctx.fillText('Tap to Start', width / 2, height / 2 + 150);
+        
+        ctx.fillStyle = 'black';
+        ctx.font = `bold ${getResponsiveFontSize(16)}px sans-serif`;
+        ctx.fillText('v1.6.4', width - 60, height - 20); // <<--- VERSION NUMBER
         return;
     }
 
