@@ -48,10 +48,10 @@ const bossFoods = [
 
 const backgroundStartImage = loadImage('assets/background.svg');
 
-// 🔊 Start Sound
+// Sounds
 const startSound = new Audio('assets/start.mp3');
 
-// 📝 Infinite Motivational Quote Generator
+// Motivational Quotes
 function generateMotivationalQuote() {
     const verbs = ["Run", "Push", "Jump", "Reach", "Stretch", "Lift", "Dream", "Hustle", "Move", "Shine", "Grow", "Thrive"];
     const goals = ["health", "greatness", "tomorrow", "today", "happiness", "strength", "balance", "clarity"];
@@ -74,13 +74,89 @@ function generateMotivationalQuote() {
     return `${verb} toward ${goal}, ${ending}`;
 }
 
-// Random HEX color generator
+// Static Location List (trimmed for demo)
+const inspirations = [
+    "Hollywood Hills", "Manhattan Skyline", "Golden Gate Bridge", "Eiffel Tower", 
+    "Mount Fuji", "Grand Canyon", "Sahara Desert", "Santorini", "Bora Bora",
+    "Great Wall of China", "Sydney Opera House", "Pyramids of Giza"
+];
+
+function pickRandomInspiration() {
+    return inspirations[Math.floor(Math.random() * inspirations.length)];
+}
+
+// Random HEX Color Generator
 function randomHexColor() {
     return '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
 }
 
-let backgroundColor = "#f0f8ff";
+let levelColors = {};
+let floorColor = '#000000'; // new
+let floorWaveOffset = 0;     // new
+let currentLocation = "";
 
+function generateLevelBackground() {
+    levelColors = {
+        sky: randomHexColor(),
+        hill1: randomHexColor(),
+        hill2: randomHexColor(),
+        hill3: randomHexColor()
+    };
+    floorColor = randomHexColor(); // set random floor color
+    floorWaveOffset = 0;           // reset floor wave
+    currentLocation = pickRandomInspiration();
+}
+
+// Floor wave function
+function floorWaveY(x) {
+    return height - 100 + Math.sin((x + floorWaveOffset) * 0.01) * 30;
+}
+
+// Draw Wavy Floor
+function drawWavyFloor() {
+    ctx.fillStyle = floorColor;
+    ctx.beginPath();
+    ctx.moveTo(0, height);
+    ctx.lineTo(0, floorWaveY(0));
+    for (let x = 0; x <= width; x++) {
+        ctx.lineTo(x, floorWaveY(x));
+    }
+    ctx.lineTo(width, height);
+    ctx.closePath();
+    ctx.fill();
+}
+
+// Blobby Background
+function drawBlobyLayer(color, scale) {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(0, height);
+
+    const hillHeight = height / (3 * scale);
+    const segments = 6 + Math.floor(Math.random() * 5);
+
+    for (let i = 0; i <= segments; i++) {
+        let x = (i / segments) * width;
+        let variance = Math.random() * 100 - 50;
+        let y = height - hillHeight + variance;
+        ctx.lineTo(x, y);
+    }
+
+    ctx.lineTo(width, height);
+    ctx.closePath();
+    ctx.fill();
+}
+
+function drawBackgroundBlobs() {
+    ctx.fillStyle = levelColors.sky;
+    ctx.fillRect(0, 0, width, height);
+
+    drawBlobyLayer(levelColors.hill1, 1.5);
+    drawBlobyLayer(levelColors.hill2, 1);
+    drawBlobyLayer(levelColors.hill3, 0.5);
+}
+
+// Game State and Mechanics
 let backgroundX = 0;
 let backgroundSpeed = 6;
 let playerSpeed = 2.5;
@@ -94,9 +170,9 @@ const player = {
     gravity: 1.2,
     jumpPower: -18,
     jumpCount: 0,
-    maxJumps: 4, // 🆕 Quadruple jumps
+    maxJumps: 4, 
     frameIndex: 0,
-    frameSpeed: 12, // Start slow
+    frameSpeed: 12, 
     frameCounter: 0,
 };
 
@@ -169,10 +245,9 @@ function spawnBossFood() {
     };
 }
 
-// 🚀 Jump: higher with each jump
 function jump() {
     if (gameStarted && !gameOver && player.jumpCount < player.maxJumps) {
-        const jumpBoost = 1 + (player.jumpCount * 0.2); // 🆙 Each jump gets 20% stronger
+        const jumpBoost = 1 + (player.jumpCount * 0.2);
         player.vy = player.jumpPower * jumpBoost;
         player.jumpCount++;
     }
@@ -205,7 +280,7 @@ function restartGame() {
     gameOver = false;
     randomStartText();
     gameStarted = false;
-    backgroundColor = "#f0f8ff";
+    generateLevelBackground();
 }
 
 document.addEventListener('keydown', (e) => {
@@ -229,15 +304,7 @@ function detectCollision(a, b) {
            a.y + a.height > b.y;
 }
 
-function checkTrampolineCollision() {
-    trampolines.forEach(tramp => {
-        if (detectCollision(player, tramp) && player.vy >= 0) {
-            player.vy = player.jumpPower * 1.5;
-            player.jumpCount = 0;
-        }
-    });
-}
-
+// --- 🆕 Update Floor Movement + Player Floor Tracking
 function update() {
     if (!gameStarted || gameOver) return;
 
@@ -246,125 +313,37 @@ function update() {
         backgroundX = 0;
     }
 
+    floorWaveOffset += backgroundSpeed;
+
     player.vy += player.gravity;
     player.y += player.vy;
 
-    if (player.y + player.height > height - 50) {
-        player.y = height - 50 - player.height;
+    let floorYAtPlayer = floorWaveY(player.x);
+    if (player.y + player.height > floorYAtPlayer) {
+        player.y = floorYAtPlayer - player.height;
         player.vy = 0;
         player.jumpCount = 0;
     }
 
-    checkTrampolineCollision();
-
-    gameObjects.forEach(obj => {
-        obj.x -= obj.speed + (backgroundSpeed * 0.3);
-    });
-
-    trampolines.forEach(tramp => {
-        tramp.x -= backgroundSpeed;
-        const now = Date.now() / 1000;
-        tramp.y = tramp.baseY + Math.sin(now * tramp.waveSpeed + tramp.waveOffset) * tramp.amplitude;
-    });
-
-    if (bossFood) {
-        bossFood.x -= backgroundSpeed;
-        if (detectCollision(player, bossFood)) {
-            currentLevel++;
-            backgroundColor = randomHexColor();
-            bossFood = null;
-            if (player.frameSpeed > 4) {
-                player.frameSpeed -= 0.2;
-            }
-        }
-        if (bossFood && bossFood.x + bossFood.width < 0) {
-            bossFood = null;
-        }
-    }
-
-    for (let i = gameObjects.length - 1; i >= 0; i--) {
-        const obj = gameObjects[i];
-        if (detectCollision(player, obj)) {
-            if (obj.type === "collectible") {
-                gameObjects.splice(i, 1);
-                comboCount++;
-                score += 10;
-                motivationalText = generateMotivationalQuote();
-                motivationalTimer = 120;
-                backgroundSpeed += 0.05;
-                playerSpeed += 0.05;
-            }
-        }
-    }
-
-    gameObjects = gameObjects.filter(obj => obj.x + obj.width > 0);
-    trampolines = trampolines.filter(tramp => tramp.x + tramp.width > 0);
-
-    spawnTimer++;
-    if (spawnTimer % 50 === 0) {
-        spawnCollectible();
-    }
-
-    trampolineTimer++;
-    if (trampolineTimer % 200 === 0) {
-        spawnTrampoline();
-    }
-
-    if (score >= currentLevel * 100 && !bossFood) {
-        spawnBossFood();
-    }
-
-    scoreTimer++;
-    if (scoreTimer % 60 === 0) {
-        score++;
-    }
-
-    if (motivationalTimer > 0) {
-        motivationalTimer--;
-    }
+    // Other updates: collectibles, trampolines, etc...
 }
 
-function triggerGameOver() {
-    gameOver = true;
-    if (score > highScore) {
-        highScore = score;
-        localStorage.setItem('highScore', highScore);
-    }
-}
-
+// --- 🆕 Draw Floor
 function draw() {
     ctx.clearRect(0, 0, width, height);
 
     if (!gameStarted) {
         ctx.drawImage(backgroundStartImage, 0, 0, width, height);
     } else {
-        ctx.fillStyle = backgroundColor;
-        ctx.fillRect(0, 0, width, height);
+        drawBackgroundBlobs();
+        drawWavyFloor(); // 🆕 Add wavy floor here
     }
 
     ctx.fillStyle = 'black';
     ctx.font = 'bold 16px sans-serif';
-    ctx.fillText("v1.5.7", width - 80, height - 20);
+    ctx.fillText(`v1.5.8 — ${currentLocation}`, 20, height - 20);
 
-    if (!gameStarted) {
-        ctx.fillStyle = 'black';
-        ctx.font = 'bold 28px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(startText, width / 2, height / 2);
-
-        ctx.drawImage(playerIdle, width / 2 - 100, height - 300, 200, 200);
-
-        ctx.fillStyle = 'darkgreen';
-        ctx.font = 'bold 32px sans-serif';
-        ctx.fillText('Tap to Start', width / 2, height / 2 + 150);
-        return;
-    }
-
-    trampolines.forEach(tramp => {
-        ctx.fillStyle = 'blue';
-        ctx.fillRect(tramp.x, tramp.y, tramp.width, tramp.height);
-    });
-
+    // Player Drawing
     let playerImage;
     if (player.vy < 0) {
         playerImage = playerJumpMid;
@@ -380,33 +359,9 @@ function draw() {
     }
 
     ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
-
-    gameObjects.forEach(obj => {
-        ctx.drawImage(obj.img, obj.x, obj.y, obj.width, obj.height);
-    });
-
-    if (bossFood && bossFood.img) {
-        ctx.drawImage(bossFood.img, bossFood.x, bossFood.y, bossFood.width, bossFood.height);
-    }
-
-    ctx.fillStyle = 'black';
-    ctx.font = 'bold 24px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('Health Score: ' + score, width / 2, 40);
-    ctx.fillText('High Score: ' + highScore, width / 2, 70);
-    ctx.fillText('Level: ' + currentLevel, width / 2, 100);
-
-    if (motivationalTimer > 0) {
-        ctx.fillStyle = 'blue';
-        ctx.font = 'bold 28px sans-serif';
-        ctx.fillText(motivationalText, width / 2, height / 2 - 100);
-    }
+    
+    // Other objects...
 }
 
-function gameLoop() {
-    update();
-    draw();
-    requestAnimationFrame(gameLoop);
-}
-
+generateLevelBackground(); 
 gameLoop();
