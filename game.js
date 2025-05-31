@@ -14,7 +14,7 @@ window.addEventListener('resize', () => {
 });
 
 // Version display
-const version = "v1.3.1";
+const version = "v1.3.2";
 
 // Load Images
 const loadImage = (src) => {
@@ -22,18 +22,6 @@ const loadImage = (src) => {
     img.src = src;
     return img;
 };
-
-// Load Sounds
-const jumpSound = new Audio('assets/jump.mp3');
-const collectSound = new Audio('assets/collect.mp3');
-const splatSound = new Audio('assets/splat.mp3');
-const startSound = new Audio('assets/start.mp3');
-const gameOverSound = new Audio('assets/gameover.mp3');
-
-function playSound(sound) {
-    const clone = sound.cloneNode();
-    clone.play();
-}
 
 const playerRunFrames = [
     loadImage('assets/run1.svg'),
@@ -198,14 +186,12 @@ function jump() {
     if (gameStarted && !gameOver && player.jumpCount < player.maxJumps) {
         player.vy = player.jumpPower;
         player.jumpCount++;
-        playSound(jumpSound);
     }
 }
 
 function startGame() {
     if (!gameStarted) {
         gameStarted = true;
-        playSound(startSound);
     } else if (gameOver) {
         restartGame();
     } else {
@@ -302,7 +288,6 @@ function update() {
                 motivationalTimer = 120;
                 backgroundSpeed += 0.5;
                 playerSpeed += 0.3;
-                playSound(collectSound);
             } else if (obj.type === "obstacle") {
                 gameObjects.splice(i, 1);
                 comboCount = 0;
@@ -318,7 +303,6 @@ function update() {
                 if (backgroundSpeed < minSpeed) {
                     triggerGameOver();
                 }
-                playSound(splatSound);
             } else if (obj.type === "powerup") {
                 gameObjects.splice(i, 1);
                 if (Math.random() < 0.5) {
@@ -376,7 +360,6 @@ function update() {
 
 function triggerGameOver() {
     gameOver = true;
-    playSound(gameOverSound);
     if (score > highScore) {
         highScore = score;
         localStorage.setItem('highScore', highScore);
