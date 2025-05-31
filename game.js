@@ -48,10 +48,10 @@ const bossFoods = [
 
 const backgroundStartImage = loadImage('assets/background.svg');
 
-// 🔊 Start Sound
+// Start Sound
 const startSound = new Audio('assets/start.mp3');
 
-// 📝 Infinite Motivational Quote Generator
+// Motivational Quotes Generator
 function generateMotivationalQuote() {
     const verbs = ["Run", "Push", "Jump", "Reach", "Stretch", "Lift", "Dream", "Hustle", "Move", "Shine", "Grow", "Thrive"];
     const goals = ["health", "greatness", "tomorrow", "today", "happiness", "strength", "balance", "clarity"];
@@ -74,13 +74,12 @@ function generateMotivationalQuote() {
     return `${verb} toward ${goal}, ${ending}`;
 }
 
-// Random HEX color generator
+// Random HEX Color
 function randomHexColor() {
     return '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
 }
 
 let backgroundColor = "#f0f8ff";
-
 let backgroundX = 0;
 let backgroundSpeed = 6;
 let playerSpeed = 2.5;
@@ -94,9 +93,9 @@ const player = {
     gravity: 1.2,
     jumpPower: -18,
     jumpCount: 0,
-    maxJumps: 4, // 🆕 Quadruple jumps
+    maxJumps: 4,
     frameIndex: 0,
-    frameSpeed: 12, // Start slow
+    frameSpeed: 12,
     frameCounter: 0,
 };
 
@@ -118,6 +117,67 @@ let startText = "";
 let comboCount = 0;
 let gameOver = false;
 let highScore = localStorage.getItem('highScore') || 0;
+
+// Parallax Layers
+const parallaxLayers = [];
+const layerSpeeds = [0.2, 0.5, 1.0];
+const shapesPerLayer = 10;
+
+function randomColor() {
+    const letters = '0123456789ABCDEF';
+    let color = '#';
+    for (let i = 0; i < 6; i++) {
+        color += letters[Math.floor(Math.random() * 16)];
+    }
+    return color;
+}
+
+function generateParallaxLayers() {
+    parallaxLayers.length = 0;
+
+    for (let i = 0; i < 3; i++) {
+        const layer = [];
+        for (let j = 0; j < shapesPerLayer; j++) {
+            layer.push({
+                type: Math.random() < 0.5 ? 'circle' : (Math.random() < 0.5 ? 'rect' : 'triangle'),
+                x: Math.random() * width,
+                y: Math.random() * height,
+                size: 50 + Math.random() * 100,
+                color: randomColor()
+            });
+        }
+        parallaxLayers.push(layer);
+    }
+}
+
+function drawParallaxLayers(offset) {
+    for (let i = 0; i < parallaxLayers.length; i++) {
+        const speed = layerSpeeds[i];
+        const layer = parallaxLayers[i];
+
+        layer.forEach(shape => {
+            ctx.save();
+            ctx.translate(shape.x - offset * speed, shape.y);
+            ctx.fillStyle = shape.color;
+
+            if (shape.type === 'circle') {
+                ctx.beginPath();
+                ctx.arc(0, 0, shape.size / 2, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (shape.type === 'rect') {
+                ctx.fillRect(-shape.size / 2, -shape.size / 2, shape.size, shape.size);
+            } else if (shape.type === 'triangle') {
+                ctx.beginPath();
+                ctx.moveTo(0, -shape.size / 2);
+                ctx.lineTo(-shape.size / 2, shape.size / 2);
+                ctx.lineTo(shape.size / 2, shape.size / 2);
+                ctx.closePath();
+                ctx.fill();
+            }
+            ctx.restore();
+        });
+    }
+}
 
 function randomStartText() {
     const starts = [
@@ -169,10 +229,9 @@ function spawnBossFood() {
     };
 }
 
-// 🚀 Jump: higher with each jump
 function jump() {
     if (gameStarted && !gameOver && player.jumpCount < player.maxJumps) {
-        const jumpBoost = 1 + (player.jumpCount * 0.2); // 🆙 Each jump gets 20% stronger
+        const jumpBoost = 1 + (player.jumpCount * 0.2);
         player.vy = player.jumpPower * jumpBoost;
         player.jumpCount++;
     }
@@ -206,6 +265,7 @@ function restartGame() {
     randomStartText();
     gameStarted = false;
     backgroundColor = "#f0f8ff";
+    generateParallaxLayers();
 }
 
 document.addEventListener('keydown', (e) => {
@@ -273,6 +333,7 @@ function update() {
             currentLevel++;
             backgroundColor = randomHexColor();
             bossFood = null;
+            generateParallaxLayers();
             if (player.frameSpeed > 4) {
                 player.frameSpeed -= 0.2;
             }
@@ -324,14 +385,6 @@ function update() {
     }
 }
 
-function triggerGameOver() {
-    gameOver = true;
-    if (score > highScore) {
-        highScore = score;
-        localStorage.setItem('highScore', highScore);
-    }
-}
-
 function draw() {
     ctx.clearRect(0, 0, width, height);
 
@@ -340,11 +393,13 @@ function draw() {
     } else {
         ctx.fillStyle = backgroundColor;
         ctx.fillRect(0, 0, width, height);
+
+        drawParallaxLayers(backgroundX);
     }
 
     ctx.fillStyle = 'black';
     ctx.font = 'bold 16px sans-serif';
-    ctx.fillText("v1.5.7", width - 80, height - 20);
+    ctx.fillText("v1.6.2", width - 80, height - 20);
 
     if (!gameStarted) {
         ctx.fillStyle = 'black';
@@ -409,4 +464,5 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 
+generateParallaxLayers();
 gameLoop();
