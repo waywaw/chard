@@ -255,15 +255,14 @@ function update() {
         tramp.y = tramp.baseY + Math.sin(now * tramp.waveSpeed + tramp.waveOffset) * tramp.amplitude;
     });
 
-    // Boss movement
     if (bossFood) {
         bossFood.x -= backgroundSpeed;
         if (detectCollision(player, bossFood)) {
             currentLevel++;
             backgroundColor = randomHexColor();
-            bossFood = null;
+            bossFood = null; // 🛡️ Safely remove after collision
         }
-        if (bossFood.x + bossFood.width < 0) {
+        if (bossFood && bossFood.x + bossFood.width < 0) {
             bossFood = null;
         }
     }
@@ -299,7 +298,6 @@ function update() {
         spawnTrampoline();
     }
 
-    // Every 100 points spawn a boss if not already active
     if (score >= currentLevel * 100 && !bossFood) {
         spawnBossFood();
     }
@@ -330,7 +328,7 @@ function draw() {
 
     ctx.fillStyle = 'black';
     ctx.font = 'bold 16px sans-serif';
-    ctx.fillText("v1.5.0", width - 80, height - 20);
+    ctx.fillText("v1.5.1", width - 80, height - 20);
 
     if (!gameStarted) {
         ctx.fillStyle = 'black';
@@ -371,7 +369,7 @@ function draw() {
         ctx.drawImage(obj.img, obj.x, obj.y, obj.width, obj.height);
     });
 
-    if (bossFood) {
+    if (bossFood && bossFood.img) { // 🛡️ Only draw if bossFood exists
         ctx.drawImage(bossFood.img, bossFood.x, bossFood.y, bossFood.width, bossFood.height);
     }
 
