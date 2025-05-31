@@ -57,9 +57,12 @@ const collectibles = [
     loadImage('assets/broccoli.svg')
 ];
 
+const powerups = [
+    loadImage('assets/golden_carrot.svg') // You’ll need a golden carrot SVG!
+];
+
 const backgroundImage = loadImage('assets/background.svg');
 
-// Motivational Quotes
 const quotes = [
     "You can do it! – Richard Simmons",
     "Sweat and Smile!",
@@ -79,9 +82,9 @@ const quotes = [
 ];
 
 let backgroundX = 0;
-let backgroundSpeed = 2;
-let playerSpeed = 1;
-const minSpeed = 2;
+let backgroundSpeed = 6; // Faster!
+let playerSpeed = 2.5;
+const minSpeed = 4;
 
 const player = {
     x: 50,
@@ -113,7 +116,15 @@ let comboCount = 0;
 let rainbowMode = false;
 let rainbowTimer = 0;
 
+let magnetMode = false;
+let magnetTimer = 0;
+
+let speedBoostMode = false;
+let speedBoostTimer = 0;
+
 let gameOver = false;
+let highScore = localStorage.getItem('highScore') || 0;
+let victoryAchieved = false;
 
 function randomStartText() {
     const starts = [
@@ -151,9 +162,22 @@ function spawnCollectible() {
         y: Math.random() * (height - 200) + 200,
         width: Math.floor(Math.random() * 20) + 80,
         height: Math.floor(Math.random() * 20) + 80,
-        speed: 6
+        speed: 5
     };
     gameObjects.push(col);
+}
+
+function spawnPowerUp() {
+    const pow = {
+        type: "powerup",
+        img: powerups[0],
+        x: width,
+        y: Math.random() * (height - 200) + 200,
+        width: 60,
+        height: 60,
+        speed: 5
+    };
+    gameObjects.push(pow);
 }
 
 function jump() {
@@ -176,16 +200,21 @@ function startGame() {
 }
 
 function restartGame() {
-    backgroundSpeed = 2;
-    playerSpeed = 1;
+    backgroundSpeed = 6;
+    playerSpeed = 2.5;
     score = 0;
     scoreTimer = 0;
     spawnTimer = 0;
     comboCount = 0;
     rainbowMode = false;
     rainbowTimer = 0;
+    magnetMode = false;
+    magnetTimer = 0;
+    speedBoostMode = false;
+    speedBoostTimer = 0;
     gameObjects = [];
     gameOver = false;
+    victoryAchieved = false;
     randomStartText();
     gameStarted = false;
 }
@@ -245,24 +274,29 @@ function update() {
                 gameObjects.splice(i, 1);
                 comboCount++;
                 if (comboCount % 5 === 0) {
-                    score += 50; // Bonus points!
+                    score += 50;
                 }
                 if (comboCount >= 10 && !rainbowMode) {
                     rainbowMode = true;
-                    rainbowTimer = 600; // ~10 seconds at 60FPS
+                    rainbowTimer = 600;
                 }
                 let points = rainbowMode ? 20 : 10;
+                if (speedBoostMode) points *= 2;
                 score += points;
                 motivationalText = quotes[Math.floor(Math.random() * quotes.length)];
                 motivationalTimer = 120;
                 backgroundSpeed += 0.5;
-                playerSpeed += 0.2;
+                playerSpeed += 0.3;
                 playSound(collectSound);
             } else if (obj.type === "obstacle") {
                 gameObjects.splice(i, 1);
-                comboCount = 0; // Reset combo
-                rainbowMode = false; // Cancel rainbow mode
+                comboCount = 0;
+                rainbowMode = false;
                 rainbowTimer = 0;
+                magnetMode = false;
+                magnetTimer = 0;
+                speedBoostMode = false;
+                speedBoostTimer = 0;
                 score = Math.max(0, score - 5);
                 backgroundSpeed -= 1;
                 playerSpeed -= 0.5;
@@ -270,16 +304,49 @@ function update() {
                     triggerGameOver();
                 }
                 playSound(splatSound);
+            } else if (obj.type === "powerup") {
+                gameObjects.splice(i, 1);
+                // Random powerup effect:
+                if (Math.random() < 0.5) {
+                    magnetMode = true;
+                    magnetTimer = 600; // 10 seconds
+                } else {
+                    speedBoostMode = true;
+                    speedBoostTimer = 300; // 5 seconds
+                }
             }
         }
     }
 
     spawnTimer++;
-    if (spawnTimer % 100 === 0) {
-        if (Math.random() < 0.6) {
-            spawnObstacle();
-        } else {
+    if (spawnTimer % 30 === 0) { // More veggies!
+        if (Math.random() < 0.7) {
             spawnCollectible();
+        } else if (Math.random() < 0.2) {
+            spawnPowerUp();
+        } else {
+            spawnObstacle();
+        }
+    }
+
+    if (rainbowMode) {
+        rainbowTimer--;
+        if (rainbowTimer <= 0) {
+            rainbowMode = false;
+        }
+    }
+
+    if (magnetMode) {
+        magnetTimer--;
+        if (magnetTimer <= 0) {
+            magnetMode = false;
+        }
+    }
+
+    if (speedBoostMode) {
+        speedBoostTimer--;
+        if (speedBoostTimer <= 0) {
+            speedBoostMode = false;
         }
     }
 
@@ -291,18 +358,18 @@ function update() {
     if (motivationalTimer > 0) {
         motivationalTimer--;
     }
-
-    if (rainbowMode) {
-        rainbowTimer--;
-        if (rainbowTimer <= 0) {
-            rainbowMode = false;
-        }
-    }
 }
 
 function triggerGameOver() {
     gameOver = true;
     playSound(gameOverSound);
+    if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('highScore', highScore);
+    }
+    if (score >= 1000) {
+        victoryAchieved = true;
+    }
 }
 
 function drawRainbowBackground() {
@@ -365,6 +432,7 @@ function draw() {
     ctx.font = 'bold 24px sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('Health Score: ' + score, width / 2, 40);
+    ctx.fillText('High Score: ' + highScore, width / 2, 70);
 
     if (motivationalTimer > 0) {
         ctx.fillStyle = 'blue';
@@ -375,22 +443,39 @@ function draw() {
     if (comboCount > 1) {
         ctx.fillStyle = 'purple';
         ctx.font = 'bold 24px sans-serif';
-        ctx.fillText('Combo: ' + comboCount, width / 2, 80);
+        ctx.fillText('Combo: ' + comboCount, width / 2, 100);
     }
 
     if (rainbowMode) {
         ctx.fillStyle = 'white';
         ctx.font = 'bold 24px sans-serif';
-        ctx.fillText('RAINBOW MODE!', width / 2, 120);
+        ctx.fillText('RAINBOW MODE!', width / 2, 140);
+    }
+
+    if (magnetMode) {
+        ctx.fillStyle = 'gold';
+        ctx.font = 'bold 24px sans-serif';
+        ctx.fillText('MAGNET MODE!', width / 2, 180);
+    }
+
+    if (speedBoostMode) {
+        ctx.fillStyle = 'red';
+        ctx.font = 'bold 24px sans-serif';
+        ctx.fillText('SPEED BOOST!', width / 2, 220);
     }
 
     if (gameOver) {
         ctx.fillStyle = 'red';
         ctx.font = 'bold 48px sans-serif';
         ctx.fillText('Game Over!', width / 2, height / 2);
+        if (victoryAchieved) {
+            ctx.fillStyle = 'green';
+            ctx.font = 'bold 32px sans-serif';
+            ctx.fillText('You lowered your cholesterol by 20%!', width / 2, height / 2 + 60);
+        }
         ctx.fillStyle = 'black';
         ctx.font = 'bold 24px sans-serif';
-        ctx.fillText('Tap to Restart', width / 2, height / 2 + 60);
+        ctx.fillText('Tap to Restart', width / 2, height / 2 + 120);
     }
 }
 
