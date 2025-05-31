@@ -61,7 +61,19 @@ const powerups = [
     loadImage('assets/golden_carrot.svg')
 ];
 
-const backgroundImage = loadImage('assets/background.svg');
+// Random background colors
+const backgroundColors = [
+    '#FFD700', // Gold
+    '#ADFF2F', // Green Yellow
+    '#FF69B4', // Hot Pink
+    '#87CEEB', // Sky Blue
+    '#FF7F50', // Coral
+    '#DA70D6', // Orchid
+    '#98FB98', // Pale Green
+    '#FFA07A'  // Light Salmon
+];
+
+let backgroundColor = backgroundColors[Math.floor(Math.random() * backgroundColors.length)];
 
 const quotes = [
     "You can do it! – Richard Simmons",
@@ -216,6 +228,7 @@ function restartGame() {
     gameOver = false;
     victoryAchieved = false;
     randomStartText();
+    backgroundColor = backgroundColors[Math.floor(Math.random() * backgroundColors.length)];
     gameStarted = false;
 }
 
@@ -389,8 +402,8 @@ function draw() {
     if (rainbowMode) {
         drawRainbowBackground();
     } else {
-        ctx.drawImage(backgroundImage, backgroundX, 0, width, height);
-        ctx.drawImage(backgroundImage, backgroundX + width, 0, width, height);
+        ctx.fillStyle = backgroundColor;
+        ctx.fillRect(0, 0, width, height);
     }
 
     if (!gameStarted) {
