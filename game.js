@@ -48,10 +48,30 @@ const bossFoods = [
 
 const backgroundStartImage = loadImage('assets/background.svg');
 
-// Start Sound
+// 🔊 Start Sound
 const startSound = new Audio('assets/start.mp3');
 
-// Responsive font size helper
+// 📚 Quotes
+let motivationalQuotes = ["Stay strong!", "Keep going!", "You're doing great!"]; // fallback
+
+async function loadQuotes() {
+    try {
+        const response = await fetch('quotes.json');
+        if (!response.ok) throw new Error('Quotes file missing!');
+        motivationalQuotes = await response.json();
+    } catch (error) {
+        console.error('Failed to load quotes:', error);
+    }
+}
+
+function generateMotivationalQuote() {
+    if (motivationalQuotes.length === 0) {
+        return "Keep going!";
+    }
+    const index = Math.floor(Math.random() * motivationalQuotes.length);
+    return motivationalQuotes[index];
+}
+
 function getResponsiveFontSize(baseSize) {
     if (width < 600) {
         return baseSize * 0.6;
@@ -61,7 +81,6 @@ function getResponsiveFontSize(baseSize) {
     return baseSize;
 }
 
-// Random HEX Color Generator
 function randomHexColor() {
     return '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
 }
@@ -109,7 +128,7 @@ let highScore = localStorage.getItem('highScore') || 0;
 const parallaxLayers = [];
 const layerSpeeds = [0.2, 0.5, 1.0];
 const shapesPerLayer = 30;
-let levelLength = 10000; // Dynamic now!
+let levelLength = 10000;
 
 function randomColor() {
     const letters = '0123456789ABCDEF';
@@ -121,7 +140,6 @@ function randomColor() {
 }
 
 function calculateLevelLength() {
-    // Bigger journey depending on level
     return (currentLevel * 100) * backgroundSpeed * 60;
 }
 
@@ -183,29 +201,7 @@ function randomStartText() {
 
 randomStartText();
 
-// Motivational Quotes Generator
-function generateMotivationalQuote() {
-    const quotes = [
-        "You can do it!",
-        "Sweat and Smile!",
-        "Every step counts!",
-        "Eat clean, stay fit!",
-        "One more carrot, one less worry!",
-        "Fuel your greatness!",
-        "Be stronger than your excuses!",
-        "Health is wealth!",
-        "Vegetables are victory!",
-        "Small steps, big change!",
-        "Make yourself proud!",
-        "Celebrate progress!",
-        "More veggies, more victories!",
-        "Healthy hustle!",
-        "Run like you mean it!"
-    ];
-    return quotes[Math.floor(Math.random() * quotes.length)];
-}
-
-// Start the Game
+// Start Game
 function startGame() {
     if (!gameStarted) {
         gameStarted = true;
@@ -218,7 +214,6 @@ function startGame() {
     }
 }
 
-// Jump Logic
 function jump() {
     if (gameStarted && !gameOver && player.jumpCount < player.maxJumps) {
         const jumpBoost = 1 + (player.jumpCount * 0.2);
@@ -227,7 +222,6 @@ function jump() {
     }
 }
 
-// Restart Game
 function restartGame() {
     backgroundSpeed = 6;
     playerSpeed = 2.5;
@@ -246,7 +240,7 @@ function restartGame() {
     backgroundColor = "#f0f8ff";
 }
 
-// Keyboard / Touch Controls
+// Controls
 document.addEventListener('keydown', (e) => {
     if (e.code === 'Space') {
         startGame();
@@ -259,7 +253,6 @@ document.addEventListener('mousedown', () => {
     startGame();
 });
 
-// Collision Detection
 function detectCollision(a, b) {
     return a.x < b.x + b.width &&
            a.x + a.width > b.x &&
@@ -267,7 +260,6 @@ function detectCollision(a, b) {
            a.y + a.height > b.y;
 }
 
-// Trampoline Collision
 function checkTrampolineCollision() {
     trampolines.forEach(tramp => {
         if (detectCollision(player, tramp) && player.vy >= 0) {
@@ -277,7 +269,6 @@ function checkTrampolineCollision() {
     });
 }
 
-// Spawn Elements
 function spawnCollectible() {
     const col = {
         type: "collectible",
@@ -314,7 +305,6 @@ function spawnBossFood() {
     };
 }
 
-// Update Game State
 function update() {
     if (!gameStarted || gameOver) return;
 
@@ -396,7 +386,6 @@ function update() {
     }
 }
 
-// Draw the Game
 function draw() {
     ctx.clearRect(0, 0, width, height);
 
@@ -420,10 +409,10 @@ function draw() {
         ctx.fillStyle = 'darkgreen';
         ctx.font = `bold ${getResponsiveFontSize(32)}px sans-serif`;
         ctx.fillText('Tap to Start', width / 2, height / 2 + 150);
-        
+
         ctx.fillStyle = 'black';
         ctx.font = `bold ${getResponsiveFontSize(16)}px sans-serif`;
-        ctx.fillText('v1.6.5', width - 60, height - 20); // VERSION NUMBER
+        ctx.fillText('v1.6.7', width - 60, height - 20); // VERSION
         return;
     }
 
@@ -469,11 +458,7 @@ function draw() {
     }
 }
 
-// Game Loop
-function gameLoop() {
-    update();
-    draw();
-    requestAnimationFrame(gameLoop);
-}
-
-gameLoop();
+// Start Game only after Quotes are loaded
+loadQuotes().then(() => {
+    gameLoop();
+});
