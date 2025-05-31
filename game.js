@@ -41,21 +41,21 @@ const collectibles = [
 ];
 
 const quotes = [
-    "You can do it! – Richard Simmons",
-    "Sweat and Smile!",
-    "Every step counts!",
-    "Eat clean, stay fit!",
-    "One more carrot, one less worry!",
-    "Fuel your greatness!",
-    "Be stronger than your excuses!",
-    "Health is wealth!",
-    "Vegetables are victory!",
-    "Small steps, big change!",
-    "Make yourself proud!",
-    "Celebrate progress!",
-    "More veggies, more victories!",
-    "Healthy hustle!",
-    "Run like you mean it!",
+    "Keep going!",
+    "Every step counts.",
+    "Eat clean, stay strong.",
+    "Fuel your greatness.",
+    "One more carrot!",
+    "Be stronger than yesterday.",
+    "Health is wealth.",
+    "Small steps, big change.",
+    "Make yourself proud.",
+    "Celebrate progress.",
+    "More veggies, more victories.",
+    "Stay focused, stay fit.",
+    "Run toward your best self.",
+    "You got this!",
+    "Victory loves preparation."
 ];
 
 const backgroundColor = "#f0f8ff";
@@ -75,7 +75,7 @@ const player = {
     jumpCount: 0,
     maxJumps: 3,
     frameIndex: 0,
-    frameSpeed: 5,
+    frameSpeed: 10, // 🧘‍♂️ Start slower — higher number = slower frame switching
     frameCounter: 0,
 };
 
@@ -156,6 +156,7 @@ function startGame() {
 function restartGame() {
     backgroundSpeed = 6;
     playerSpeed = 2.5;
+    player.frameSpeed = 10;
     score = 0;
     scoreTimer = 0;
     spawnTimer = 0;
@@ -218,7 +219,7 @@ function update() {
     checkTrampolineCollision();
 
     gameObjects.forEach(obj => {
-        obj.x -= obj.speed;
+        obj.x -= obj.speed + (backgroundSpeed * 0.3);
     });
 
     trampolines.forEach(tramp => {
@@ -236,13 +237,15 @@ function update() {
                 score += 10;
                 motivationalText = quotes[Math.floor(Math.random() * quotes.length)];
                 motivationalTimer = 120;
-                backgroundSpeed += 0.5;
-                playerSpeed += 0.3;
+                backgroundSpeed += 0.5; // Background speeds up
+                playerSpeed += 0.2;     // Vegetables speed up slightly
+                if (player.frameSpeed > 5) {
+                    player.frameSpeed -= 0.2; // Player animation speeds up slowly
+                }
             }
         }
     }
 
-    // Clean up off-screen objects
     gameObjects = gameObjects.filter(obj => obj.x + obj.width > 0);
     trampolines = trampolines.filter(tramp => tramp.x + tramp.width > 0);
 
@@ -282,7 +285,7 @@ function draw() {
 
     ctx.fillStyle = 'black';
     ctx.font = 'bold 16px sans-serif';
-    ctx.fillText("v1.4.4", width - 80, height - 20);
+    ctx.fillText("v1.4.5", width - 80, height - 20);
 
     if (!gameStarted) {
         ctx.fillStyle = 'black';
