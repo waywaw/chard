@@ -14,7 +14,7 @@ window.addEventListener('resize', () => {
 });
 
 // Version display
-const version = "v1.3.3";
+const version = "v1.3.4";
 
 // Load Images
 const loadImage = (src) => {
@@ -53,14 +53,7 @@ const powerups = [
 ];
 
 const backgroundColors = [
-    '#FFD700',
-    '#ADFF2F',
-    '#FF69B4',
-    '#87CEEB',
-    '#FF7F50',
-    '#DA70D6',
-    '#98FB98',
-    '#FFA07A'
+    '#FFD700', '#ADFF2F', '#FF69B4', '#87CEEB', '#FF7F50', '#DA70D6', '#98FB98', '#FFA07A'
 ];
 
 let backgroundColor = backgroundColors[Math.floor(Math.random() * backgroundColors.length)];
@@ -104,6 +97,21 @@ const player = {
 };
 
 let gameObjects = [];
+let platforms = [];
+
+function createPlatforms() {
+    platforms = [];
+    for (let i = 0; i < 5; i++) {
+        platforms.push({
+            x: 300 + i * 600,
+            y: Math.random() * (height - 400) + 200,
+            width: 150,
+            height: 20,
+        });
+    }
+}
+
+createPlatforms();
 
 let gameStarted = false;
 let spawnTimer = 0;
@@ -217,6 +225,10 @@ function restartGame() {
     victoryAchieved = false;
     randomStartText();
     backgroundColor = backgroundColors[Math.floor(Math.random() * backgroundColors.length)];
+    createPlatforms();
+    player.y = height - 300;
+    player.vy = 0;
+    player.jumpCount = 0;
     gameStarted = false;
 }
 
@@ -241,6 +253,20 @@ function detectCollision(a, b) {
            a.y + a.height > b.y;
 }
 
+function checkPlatformCollision() {
+    for (let plat of platforms) {
+        if (player.vy > 0 && 
+            player.x + player.width > plat.x &&
+            player.x < plat.x + plat.width &&
+            player.y + player.height <= plat.y + 10 &&
+            player.y + player.height + player.vy >= plat.y) {
+            player.y = plat.y - player.height;
+            player.vy = 0;
+            player.jumpCount = 0;
+        }
+    }
+}
+
 function update() {
     if (!gameStarted || gameOver) return;
 
@@ -258,8 +284,14 @@ function update() {
         player.jumpCount = 0;
     }
 
+    checkPlatformCollision();
+
     gameObjects.forEach(obj => {
         obj.x -= obj.speed;
+    });
+
+    platforms.forEach(plat => {
+        plat.x -= backgroundSpeed;
     });
 
     for (let i = gameObjects.length - 1; i >= 0; i--) {
@@ -317,13 +349,13 @@ function update() {
     }
 
     spawnTimer++;
-    if (spawnTimer % 5 === 0) {
-        spawnObstacle(); // Less frequent junk food
-    } else {
-        if (Math.random() < 0.8) {
+    if (spawnTimer % 30 === 0) {
+        if (Math.random() < 0.7) {
             spawnCollectible();
-        } else {
+        } else if (Math.random() < 0.2) {
             spawnPowerUp();
+        } else {
+            spawnObstacle();
         }
     }
 
@@ -391,7 +423,6 @@ function draw() {
         ctx.fillRect(0, 0, width, height);
     }
 
-    // VERSION TEXT
     ctx.fillStyle = 'black';
     ctx.font = 'bold 16px sans-serif';
     ctx.fillText(version, width - 80, height - 20);
@@ -425,6 +456,11 @@ function draw() {
     }
 
     ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
+
+    platforms.forEach(plat => {
+        ctx.fillStyle = 'brown';
+        ctx.fillRect(plat.x, plat.y, plat.width, plat.height);
+    });
 
     gameObjects.forEach(obj => {
         ctx.drawImage(obj.img, obj.x, obj.y, obj.width, obj.height);
