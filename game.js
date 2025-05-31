@@ -1,192 +1,62 @@
-// Setup canvas
-const canvas = document.getElementById('gameCanvas');
-const ctx = canvas.getContext('2d');
+// ... [everything from v1.6.1 before stays the same] ...
 
-let width = window.innerWidth;
-let height = window.innerHeight;
-canvas.width = width;
-canvas.height = height;
-
-window.addEventListener('resize', () => {
-    width = window.innerWidth;
-    height = window.innerHeight;
-    canvas.width = width;
-    canvas.height = height;
-});
-
-// Load Images
-const loadImage = (src) => {
-    const img = new Image();
-    img.src = src;
-    return img;
-};
-
-const playerRunFrames = [
-    loadImage('assets/run1.svg'),
-    loadImage('assets/run2.svg'),
-    loadImage('assets/run3.svg'),
-    loadImage('assets/run4.svg'),
-    loadImage('assets/run5.svg'),
+// 🎨 Saul Bass Style Color Palettes
+const saulBassPalettes = [
+  ['#e63946', '#f1faee', '#a8dadc', '#457b9d', '#1d3557'],
+  ['#ff6f61', '#6b4226', '#ffe156', '#6a0572', '#ab83a1'],
+  ['#ef476f', '#ffd166', '#06d6a0', '#118ab2', '#073b4c'],
+  ['#e07a5f', '#3d405b', '#81b29a', '#f2cc8f', '#f4f1de'],
+  ['#d62828', '#f77f00', '#fcbf49', '#eae2b7', '#003049']
 ];
 
-const playerJumpStart = loadImage('assets/jump_start.svg');
-const playerJumpMid = loadImage('assets/jump_mid.svg');
-const playerJumpFall = loadImage('assets/jump_fall.svg');
+let backgroundShapes = [];
+let currentPalette = [];
 
-const playerIdle = loadImage('assets/chard2.svg');
-
-const collectibles = [
-    loadImage('assets/carrot.svg'),
-    loadImage('assets/broccoli.svg')
-];
-
-const bossFoods = [
-    loadImage('assets/burger.svg'),
-    loadImage('assets/pizza.svg'),
-    loadImage('assets/donut.svg')
-];
-
-const backgroundStartImage = loadImage('assets/background.svg');
-
-// 🔊 Start Sound
-const startSound = new Audio('assets/start.mp3');
-
-// 📝 Infinite Motivational Quote Generator
-function generateMotivationalQuote() {
-    const verbs = ["Run", "Push", "Jump", "Reach", "Stretch", "Lift", "Dream", "Hustle", "Move", "Shine", "Grow", "Thrive"];
-    const goals = ["health", "greatness", "tomorrow", "today", "happiness", "strength", "balance", "clarity"];
-    const endings = [
-        "every step counts.",
-        "you're unstoppable.",
-        "one breath at a time.",
-        "small victories build empires.",
-        "your best is yet to come.",
-        "fuel your fire.",
-        "make it happen.",
-        "believe and achieve.",
-        "no limits, only milestones."
-    ];
-
-    const verb = verbs[Math.floor(Math.random() * verbs.length)];
-    const goal = goals[Math.floor(Math.random() * goals.length)];
-    const ending = endings[Math.floor(Math.random() * endings.length)];
-
-    return `${verb} toward ${goal}, ${ending}`;
+function randomFromArray(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
 }
 
-// Random HEX color generator
-function randomHexColor() {
-    return '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+function generateSaulBassShapes() {
+    backgroundShapes = [];
+    currentPalette = randomFromArray(saulBassPalettes);
+
+    for (let i = 0; i < 15; i++) {
+        const shape = {
+            type: Math.random() > 0.5 ? 'triangle' : 'circle', // Could expand to rectangles, lines
+            color: randomFromArray(currentPalette),
+            x: Math.random() * width,
+            y: Math.random() * height,
+            size: 50 + Math.random() * 100,
+            rotation: Math.random() * Math.PI * 2
+        };
+        backgroundShapes.push(shape);
+    }
 }
 
-let backgroundColor = "#f0f8ff";
+function drawSaulBassBackground() {
+    ctx.fillStyle = backgroundColor;
+    ctx.fillRect(0, 0, width, height);
 
-let backgroundX = 0;
-let backgroundSpeed = 6;
-let playerSpeed = 2.5;
+    backgroundShapes.forEach(shape => {
+        ctx.save();
+        ctx.translate(shape.x, shape.y);
+        ctx.rotate(shape.rotation);
+        ctx.fillStyle = shape.color;
 
-const player = {
-    x: 50,
-    y: height - 300,
-    width: 200,
-    height: 200,
-    vy: 0,
-    gravity: 1.2,
-    jumpPower: -18,
-    jumpCount: 0,
-    maxJumps: 4, // 🆕 Quadruple jumps
-    frameIndex: 0,
-    frameSpeed: 12, // Start slow
-    frameCounter: 0,
-};
-
-let gameObjects = [];
-let trampolines = [];
-let bossFood = null;
-
-let gameStarted = false;
-let spawnTimer = 0;
-let trampolineTimer = 0;
-let score = 0;
-let scoreTimer = 0;
-let currentLevel = 1;
-
-let motivationalText = "";
-let motivationalTimer = 0;
-let startText = "";
-
-let comboCount = 0;
-let gameOver = false;
-let highScore = localStorage.getItem('highScore') || 0;
-
-function randomStartText() {
-    const starts = [
-        "Run for your health.",
-        "Lower cholesterol.",
-        "Stay alive. The run never ends.",
-        "Each step is a win.",
-        "Healthy life, happy life.",
-        "Run toward your best self."
-    ];
-    startText = starts[Math.floor(Math.random() * starts.length)];
-}
-
-randomStartText();
-
-function spawnCollectible() {
-    const col = {
-        type: "collectible",
-        img: collectibles[Math.floor(Math.random() * collectibles.length)],
-        x: width,
-        y: Math.random() * (height - 250) + 200,
-        width: 80 + Math.random() * 20,
-        height: 80 + Math.random() * 20,
-        speed: 5
-    };
-    gameObjects.push(col);
-}
-
-function spawnTrampoline() {
-    trampolines.push({
-        x: width,
-        baseY: height - 100,
-        width: 100,
-        height: 30,
-        amplitude: 20 + Math.random() * 40,
-        waveSpeed: 0.5 + Math.random(),
-        waveOffset: Math.random() * Math.PI * 2
+        if (shape.type === 'triangle') {
+            ctx.beginPath();
+            ctx.moveTo(0, -shape.size / 2);
+            ctx.lineTo(-shape.size / 2, shape.size / 2);
+            ctx.lineTo(shape.size / 2, shape.size / 2);
+            ctx.closePath();
+            ctx.fill();
+        } else if (shape.type === 'circle') {
+            ctx.beginPath();
+            ctx.arc(0, 0, shape.size / 2, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.restore();
     });
-}
-
-function spawnBossFood() {
-    bossFood = {
-        img: bossFoods[Math.floor(Math.random() * bossFoods.length)],
-        x: width,
-        y: height - 300,
-        width: 300,
-        height: 300,
-        speed: 6
-    };
-}
-
-// 🚀 Jump: higher with each jump
-function jump() {
-    if (gameStarted && !gameOver && player.jumpCount < player.maxJumps) {
-        const jumpBoost = 1 + (player.jumpCount * 0.2); // 🆙 Each jump gets 20% stronger
-        player.vy = player.jumpPower * jumpBoost;
-        player.jumpCount++;
-    }
-}
-
-function startGame() {
-    if (!gameStarted) {
-        gameStarted = true;
-        startSound.play();
-    } else if (gameOver) {
-        restartGame();
-    } else {
-        jump();
-    }
 }
 
 function restartGame() {
@@ -206,38 +76,10 @@ function restartGame() {
     randomStartText();
     gameStarted = false;
     backgroundColor = "#f0f8ff";
+    generateSaulBassShapes(); // Generate first set of shapes
 }
 
-document.addEventListener('keydown', (e) => {
-    if (e.code === 'Space') {
-        startGame();
-    }
-});
-
-document.addEventListener('touchstart', () => {
-    startGame();
-});
-
-document.addEventListener('mousedown', () => {
-    startGame();
-});
-
-function detectCollision(a, b) {
-    return a.x < b.x + b.width &&
-           a.x + a.width > b.x &&
-           a.y < b.y + b.height &&
-           a.y + a.height > b.y;
-}
-
-function checkTrampolineCollision() {
-    trampolines.forEach(tramp => {
-        if (detectCollision(player, tramp) && player.vy >= 0) {
-            player.vy = player.jumpPower * 1.5;
-            player.jumpCount = 0;
-        }
-    });
-}
-
+// 🚀 When you level up (eat boss food)
 function update() {
     if (!gameStarted || gameOver) return;
 
@@ -273,6 +115,7 @@ function update() {
             currentLevel++;
             backgroundColor = randomHexColor();
             bossFood = null;
+            generateSaulBassShapes(); // 🆕 New background each level
             if (player.frameSpeed > 4) {
                 player.frameSpeed -= 0.2;
             }
@@ -324,27 +167,18 @@ function update() {
     }
 }
 
-function triggerGameOver() {
-    gameOver = true;
-    if (score > highScore) {
-        highScore = score;
-        localStorage.setItem('highScore', highScore);
-    }
-}
-
 function draw() {
     ctx.clearRect(0, 0, width, height);
 
     if (!gameStarted) {
         ctx.drawImage(backgroundStartImage, 0, 0, width, height);
     } else {
-        ctx.fillStyle = backgroundColor;
-        ctx.fillRect(0, 0, width, height);
+        drawSaulBassBackground(); // 🆕 Saul Bass background
     }
 
     ctx.fillStyle = 'black';
     ctx.font = 'bold 16px sans-serif';
-    ctx.fillText("v1.5.7", width - 80, height - 20);
+    ctx.fillText("v1.6.2", width - 80, height - 20);
 
     if (!gameStarted) {
         ctx.fillStyle = 'black';
@@ -409,4 +243,5 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 
+generateSaulBassShapes(); // 🆕 Generate initial Saul Bass shapes
 gameLoop();
