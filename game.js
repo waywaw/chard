@@ -46,6 +46,8 @@ const bossFoods = [
     loadImage('assets/donut.svg')
 ];
 
+const backgroundStartImage = loadImage('assets/background.svg');
+
 const quotes = [
     "Keep going!",
     "Every step counts.",
@@ -86,7 +88,7 @@ const player = {
     jumpCount: 0,
     maxJumps: 3,
     frameIndex: 0,
-    frameSpeed: 12, // 🐢 Start very slow (higher = slower animation speed)
+    frameSpeed: 12, // Start very slow
     frameCounter: 0,
 };
 
@@ -180,7 +182,7 @@ function startGame() {
 function restartGame() {
     backgroundSpeed = 6;
     playerSpeed = 2.5;
-    player.frameSpeed = 12; // 🐢 Reset to slow start
+    player.frameSpeed = 12; // Reset to slow start
     score = 0;
     scoreTimer = 0;
     spawnTimer = 0;
@@ -261,9 +263,9 @@ function update() {
             currentLevel++;
             backgroundColor = randomHexColor();
             bossFood = null;
-            // 🏃‍♂️ Gradually speed up player animation on level up
+            // Gradually speed up player animation on level up
             if (player.frameSpeed > 4) {
-                player.frameSpeed -= 0.5;
+                player.frameSpeed -= 0.2;
             }
         }
         if (bossFood && bossFood.x + bossFood.width < 0) {
@@ -280,8 +282,8 @@ function update() {
                 score += 10;
                 motivationalText = quotes[Math.floor(Math.random() * quotes.length)];
                 motivationalTimer = 120;
-                backgroundSpeed += 0.5;
-                playerSpeed += 0.2;
+                backgroundSpeed += 0.05; // Slower increase
+                playerSpeed += 0.05;     // Slower increase
             }
         }
     }
@@ -324,12 +326,16 @@ function triggerGameOver() {
 function draw() {
     ctx.clearRect(0, 0, width, height);
 
-    ctx.fillStyle = backgroundColor;
-    ctx.fillRect(0, 0, width, height);
+    if (!gameStarted) {
+        ctx.drawImage(backgroundStartImage, 0, 0, width, height); // 🌄 Landing background
+    } else {
+        ctx.fillStyle = backgroundColor;
+        ctx.fillRect(0, 0, width, height);
+    }
 
     ctx.fillStyle = 'black';
     ctx.font = 'bold 16px sans-serif';
-    ctx.fillText("v1.5.2", width - 80, height - 20);
+    ctx.fillText("v1.5.3", width - 80, height - 20);
 
     if (!gameStarted) {
         ctx.fillStyle = 'black';
