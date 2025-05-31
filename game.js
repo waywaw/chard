@@ -1,5 +1,3 @@
-// Chard Runner - Old Mobile/Working Version Restored
-
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
@@ -15,12 +13,14 @@ window.addEventListener('resize', () => {
     canvas.height = height;
 });
 
+// Load Images
 const loadImage = (src) => {
     const img = new Image();
     img.src = src;
     return img;
 };
 
+// Load Sounds
 const jumpSound = new Audio('assets/jump.mp3');
 const collectSound = new Audio('assets/collect.mp3');
 const splatSound = new Audio('assets/splat.mp3');
@@ -32,6 +32,7 @@ function playSound(sound) {
     clone.play();
 }
 
+// Load Player Sprites
 const playerRunFrames = [
     loadImage('assets/run1.svg'),
     loadImage('assets/run2.svg'),
@@ -45,6 +46,7 @@ const playerJumpMid = loadImage('assets/jump_mid.svg');
 const playerJumpFall = loadImage('assets/jump_fall.svg');
 const playerIdle = loadImage('assets/chard2.svg');
 
+// Load Obstacles and Collectibles
 const obstacles = [
     loadImage('assets/burger.svg'),
     loadImage('assets/pizza.svg'),
@@ -56,36 +58,51 @@ const collectibles = [
     loadImage('assets/broccoli.svg')
 ];
 
-const palettes = [
-    ['#FF7F50', '#FFD700', '#FF6347', '#CD5C5C'],
-    ['#00CED1', '#4682B4', '#5F9EA0', '#6495ED'],
-    ['#ADFF2F', '#7FFF00', '#32CD32', '#006400'],
-    ['#9932CC', '#8A2BE2', '#9400D3', '#4B0082'],
-    ['#FF69B4', '#FF1493', '#DB7093', '#C71585']
+// Powerups
+const powerups = [
+    loadImage('assets/golden_carrot.svg') // Your golden carrot SVG
 ];
 
-let currentPalette = palettes[0];
+// Motivational Quotes
+const quotes = [
+    "You can do it! – Richard Simmons",
+    "Sweat and Smile!",
+    "Every step counts!",
+    "Eat clean, stay fit!",
+    "One more carrot, one less worry!",
+    "Fuel your greatness!",
+    "Be stronger than your excuses!",
+    "Health is wealth!",
+    "Vegetables are victory!",
+    "Small steps, big change!",
+    "Make yourself proud!",
+    "Celebrate progress!",
+    "More veggies, more victories!",
+    "Healthy hustle!",
+    "Run like you mean it!",
+];
 
-function randomizePalette() {
-    const randomIndex = Math.floor(Math.random() * palettes.length);
-    currentPalette = palettes[randomIndex];
-}
-
+// Dynamic Saul Bass Style Background
 function drawDynamicBackground(offset) {
     ctx.save();
-    ctx.fillStyle = '#FFE4B5';
+
+    // Sky Background
+    ctx.fillStyle = '#FFE4B5'; // Light Saul Bass background base
     ctx.fillRect(0, 0, width, height);
 
+    // Sky Color Bands
+    const skyColors = ['#FF7F50', '#FFD700', '#FF6347', '#CD5C5C'];
     const bandHeight = height / 8;
-    for (let i = 0; i < currentPalette.length; i++) {
-        ctx.fillStyle = currentPalette[i];
+    for (let i = 0; i < skyColors.length; i++) {
+        ctx.fillStyle = skyColors[i];
         ctx.fillRect(0, i * bandHeight, width, bandHeight);
     }
 
-    ctx.fillStyle = '#2E2E2E';
+    // Mountains (farther, slower parallax)
+    ctx.fillStyle = '#2E2E2E'; // Dark gray
     let mountainWidth = 300;
     let mountainHeight = 200;
-    let mountainOffset = offset * 0.5;
+    let mountainOffset = offset * 0.5; // Move slower for parallax
     for (let x = -mountainWidth + (mountainOffset % mountainWidth); x < width + mountainWidth; x += mountainWidth) {
         ctx.beginPath();
         ctx.moveTo(x, height - 400);
@@ -95,7 +112,8 @@ function drawDynamicBackground(offset) {
         ctx.fill();
     }
 
-    ctx.fillStyle = '#000000';
+    // Ground Layer (closer, faster parallax)
+    ctx.fillStyle = '#000000'; // Bold black ground
     let groundWidth = 100;
     let groundHeight = 50;
     let groundOffset = offset % groundWidth;
@@ -108,7 +126,8 @@ function drawDynamicBackground(offset) {
         ctx.fill();
     }
 
-    ctx.fillStyle = '#333333';
+    // Abstract Trees or Poles
+    ctx.fillStyle = '#333333'; // Dark abstract shapes
     let treeSpacing = 200;
     let treeOffset = offset % treeSpacing;
     for (let x = -treeSpacing + treeOffset; x < width + treeSpacing; x += treeSpacing) {
@@ -124,9 +143,9 @@ function drawDynamicBackground(offset) {
 }
 
 let backgroundX = 0;
-let baseBackgroundSpeed = 4;
-let backgroundSpeed = baseBackgroundSpeed;
-let playerSpeed = 1.5;
+let backgroundSpeed = 6;
+let playerSpeed = 2.5;
+const minSpeed = 4;
 
 const player = {
     x: 50,
@@ -141,16 +160,28 @@ const player = {
     frameIndex: 0,
     frameSpeed: 5,
     frameCounter: 0,
-    crouching: false
 };
 
 let gameObjects = [];
 let gameStarted = false;
 let spawnTimer = 0;
 let score = 0;
-let veggiesCollected = 0;
-let highScore = localStorage.getItem('highScore') || 0;
+let scoreTimer = 0;
+let motivationalText = "";
+let motivationalTimer = 0;
+let startText = "";
+
+let comboCount = 0;
+let rainbowMode = false;
+let rainbowTimer = 0;
+let magnetMode = false;
+let magnetTimer = 0;
+let speedBoostMode = false;
+let speedBoostTimer = 0;
+
 let gameOver = false;
+let highScore = localStorage.getItem('highScore') || 0;
+let victoryAchieved = false;
 
 function randomStartText() {
     const starts = [
@@ -162,10 +193,9 @@ function randomStartText() {
         "Healthy life, happy life.",
         "Run toward your best self."
     ];
-    return starts[Math.floor(Math.random() * starts.length)];
+    startText = starts[Math.floor(Math.random() * starts.length)];
 }
-
-let startText = randomStartText();
+randomStartText();
 
 function spawnObstacle() {
     const obs = {
@@ -173,8 +203,8 @@ function spawnObstacle() {
         img: obstacles[Math.floor(Math.random() * obstacles.length)],
         x: width,
         y: Math.random() * (height - 200) + 200,
-        width: 100,
-        height: 100,
+        width: Math.floor(Math.random() * 20) + 80,
+        height: Math.floor(Math.random() * 20) + 80,
         speed: 6
     };
     gameObjects.push(obs);
@@ -186,11 +216,24 @@ function spawnCollectible() {
         img: collectibles[Math.floor(Math.random() * collectibles.length)],
         x: width,
         y: Math.random() * (height - 200) + 200,
-        width: 80,
-        height: 80,
+        width: Math.floor(Math.random() * 20) + 80,
+        height: Math.floor(Math.random() * 20) + 80,
         speed: 5
     };
     gameObjects.push(col);
+}
+
+function spawnPowerUp() {
+    const pow = {
+        type: "powerup",
+        img: powerups[0],
+        x: width,
+        y: Math.random() * (height - 200) + 200,
+        width: 60,
+        height: 60,
+        speed: 5
+    };
+    gameObjects.push(pow);
 }
 
 function jump() {
@@ -198,19 +241,6 @@ function jump() {
         player.vy = player.jumpPower;
         player.jumpCount++;
         playSound(jumpSound);
-    }
-}
-
-function crouchDown() {
-    if (gameStarted && !gameOver) {
-        player.crouching = true;
-    }
-}
-
-function standUp() {
-    if (player.crouching) {
-        player.crouching = false;
-        jump();
     }
 }
 
@@ -226,17 +256,38 @@ function startGame() {
 }
 
 function restartGame() {
-    backgroundSpeed = baseBackgroundSpeed;
-    playerSpeed = 1.5;
+    backgroundSpeed = 6;
+    playerSpeed = 2.5;
     score = 0;
-    veggiesCollected = 0;
+    scoreTimer = 0;
     spawnTimer = 0;
+    comboCount = 0;
+    rainbowMode = false;
+    rainbowTimer = 0;
+    magnetMode = false;
+    magnetTimer = 0;
+    speedBoostMode = false;
+    speedBoostTimer = 0;
     gameObjects = [];
     gameOver = false;
-    startText = randomStartText();
-    randomizePalette();
+    victoryAchieved = false;
+    randomStartText();
     gameStarted = false;
 }
+
+document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') {
+        startGame();
+    }
+});
+
+document.addEventListener('touchstart', () => {
+    startGame();
+});
+
+document.addEventListener('mousedown', () => {
+    startGame();
+});
 
 function detectCollision(a, b) {
     return a.x < b.x + b.width &&
@@ -249,7 +300,9 @@ function update() {
     if (!gameStarted || gameOver) return;
 
     backgroundX -= backgroundSpeed;
-    if (backgroundX <= -width) backgroundX = 0;
+    if (backgroundX <= -width) {
+        backgroundX = 0;
+    }
 
     player.vy += player.gravity;
     player.y += player.vy;
@@ -261,49 +314,92 @@ function update() {
     }
 
     gameObjects.forEach(obj => {
-        obj.x -= backgroundSpeed * (obj.type === 'obstacle' ? 1.2 : 1);
+        obj.x -= obj.speed;
     });
 
     for (let i = gameObjects.length - 1; i >= 0; i--) {
         const obj = gameObjects[i];
         if (obj.x + obj.width < 0) {
             gameObjects.splice(i, 1);
+            continue;
         }
         if (detectCollision(player, obj)) {
             if (obj.type === "collectible") {
                 gameObjects.splice(i, 1);
-                veggiesCollected++;
-                score += 10;
-                backgroundSpeed += 0.2;
-                playerSpeed += 0.1;
-                if (veggiesCollected % 5 === 0) randomizePalette();
-                if (score > highScore) {
-                    highScore = score;
-                    localStorage.setItem('highScore', highScore);
+                comboCount++;
+                if (comboCount % 5 === 0) {
+                    score += 50;
                 }
+                if (comboCount >= 10 && !rainbowMode) {
+                    rainbowMode = true;
+                    rainbowTimer = 600;
+                }
+                let points = rainbowMode ? 20 : 10;
+                if (speedBoostMode) points *= 2;
+                score += points;
+                motivationalText = quotes[Math.floor(Math.random() * quotes.length)];
+                motivationalTimer = 120;
+                backgroundSpeed += 0.5;
+                playerSpeed += 0.3;
                 playSound(collectSound);
             } else if (obj.type === "obstacle") {
                 gameObjects.splice(i, 1);
-                backgroundSpeed = Math.max(2, backgroundSpeed - 0.5);
-                playerSpeed = Math.max(1, playerSpeed - 0.3);
+                comboCount = 0;
+                rainbowMode = false;
+                rainbowTimer = 0;
+                magnetMode = false;
+                magnetTimer = 0;
+                speedBoostMode = false;
+                speedBoostTimer = 0;
                 score = Math.max(0, score - 5);
+                backgroundSpeed -= 1;
+                playerSpeed -= 0.5;
+                if (backgroundSpeed < minSpeed) {
+                    triggerGameOver();
+                }
                 playSound(splatSound);
-                if (score <= 0) triggerGameOver();
+            } else if (obj.type === "powerup") {
+                gameObjects.splice(i, 1);
+                if (Math.random() < 0.5) {
+                    magnetMode = true;
+                    magnetTimer = 600;
+                } else {
+                    speedBoostMode = true;
+                    speedBoostTimer = 300;
+                }
             }
         }
     }
 
     spawnTimer++;
-    if (gameObjects.length < 50 && spawnTimer % 60 === 0) {
-        if (Math.random() < 0.7) spawnCollectible();
-        else spawnObstacle();
+    if (spawnTimer % 30 === 0) {
+        if (Math.random() < 0.7) {
+            spawnCollectible();
+        } else if (Math.random() < 0.2) {
+            spawnPowerUp();
+        } else {
+            spawnObstacle();
+        }
     }
+
+    if (rainbowMode && --rainbowTimer <= 0) rainbowMode = false;
+    if (magnetMode && --magnetTimer <= 0) magnetMode = false;
+    if (speedBoostMode && --speedBoostTimer <= 0) speedBoostMode = false;
+
+    if (++scoreTimer % 60 === 0) score++;
+    if (motivationalTimer > 0) motivationalTimer--;
 }
 
 function triggerGameOver() {
     gameOver = true;
     playSound(gameOverSound);
-    localStorage.setItem('highScore', highScore);
+    if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('highScore', highScore);
+    }
+    if (score >= 1000) {
+        victoryAchieved = true;
+    }
 }
 
 function draw() {
@@ -323,18 +419,8 @@ function draw() {
         return;
     }
 
-    let playerImage = playerRunFrames[player.frameIndex];
-    let pWidth = player.width;
-    let pHeight = player.height;
-    let pX = player.x;
-    let pY = player.y;
-
-    if (player.crouching) {
-        playerImage = playerJumpStart;
-        pWidth = player.width / 2;
-        pHeight = player.height / 2;
-        pY = player.y + player.height / 2;
-    } else if (player.vy < 0) {
+    let playerImage;
+    if (player.vy < 0) {
         playerImage = playerJumpMid;
     } else if (player.vy > 0 && player.jumpCount > 0) {
         playerImage = playerJumpFall;
@@ -344,9 +430,10 @@ function draw() {
             player.frameIndex = (player.frameIndex + 1) % playerRunFrames.length;
             player.frameCounter = 0;
         }
+        playerImage = playerRunFrames[player.frameIndex];
     }
 
-    ctx.drawImage(playerImage, pX, pY, pWidth, pHeight);
+    ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
 
     gameObjects.forEach(obj => {
         ctx.drawImage(obj.img, obj.x, obj.y, obj.width, obj.height);
@@ -357,26 +444,56 @@ function draw() {
     ctx.textAlign = 'center';
     ctx.fillText('Health Score: ' + score, width / 2, 40);
     ctx.fillText('High Score: ' + highScore, width / 2, 70);
-}
 
-// --- Mobile/Desktop Start Events ---
-let gameLoopStarted = false;
+    if (motivationalTimer > 0) {
+        ctx.fillStyle = 'blue';
+        ctx.font = 'bold 28px sans-serif';
+        ctx.fillText(motivationalText, width / 2, height / 2 - 100);
+    }
 
-function startGameLoop() {
-    if (!gameLoopStarted) {
-        gameLoopStarted = true;
-        requestAnimationFrame(gameLoop);
+    if (comboCount > 1) {
+        ctx.fillStyle = 'purple';
+        ctx.font = 'bold 24px sans-serif';
+        ctx.fillText('Combo: ' + comboCount, width / 2, 100);
+    }
+
+    if (rainbowMode) {
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 24px sans-serif';
+        ctx.fillText('RAINBOW MODE!', width / 2, 140);
+    }
+
+    if (magnetMode) {
+        ctx.fillStyle = 'gold';
+        ctx.font = 'bold 24px sans-serif';
+        ctx.fillText('MAGNET MODE!', width / 2, 180);
+    }
+
+    if (speedBoostMode) {
+        ctx.fillStyle = 'red';
+        ctx.font = 'bold 24px sans-serif';
+        ctx.fillText('SPEED BOOST!', width / 2, 220);
+    }
+
+    if (gameOver) {
+        ctx.fillStyle = 'red';
+        ctx.font = 'bold 48px sans-serif';
+        ctx.fillText('Game Over!', width / 2, height / 2);
+        if (victoryAchieved) {
+            ctx.fillStyle = 'green';
+            ctx.font = 'bold 32px sans-serif';
+            ctx.fillText('You lowered your cholesterol by 20%!', width / 2, height / 2 + 60);
+        }
+        ctx.fillStyle = 'black';
+        ctx.font = 'bold 24px sans-serif';
+        ctx.fillText('Tap to Restart', width / 2, height / 2 + 120);
     }
 }
-
-// Attach as early as possible
-window.addEventListener('touchstart', startGameLoop, { once: true });
-window.addEventListener('touchend', startGameLoop, { once: true });
-window.addEventListener('click', startGameLoop, { once: true });
-window.addEventListener('keydown', startGameLoop, { once: true });
 
 function gameLoop() {
     update();
     draw();
     requestAnimationFrame(gameLoop);
 }
+
+gameLoop();
