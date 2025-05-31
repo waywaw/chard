@@ -121,7 +121,8 @@ let highScore = localStorage.getItem('highScore') || 0;
 // Parallax Layers
 const parallaxLayers = [];
 const layerSpeeds = [0.2, 0.5, 1.0];
-const shapesPerLayer = 10;
+const shapesPerLayer = 30;
+const levelLength = 10000; // Length of level in pixels
 
 function randomColor() {
     const letters = '0123456789ABCDEF';
@@ -140,7 +141,7 @@ function generateParallaxLayers() {
         for (let j = 0; j < shapesPerLayer; j++) {
             layer.push({
                 type: Math.random() < 0.5 ? 'circle' : (Math.random() < 0.5 ? 'rect' : 'triangle'),
-                x: Math.random() * width,
+                x: Math.random() * levelLength,
                 y: Math.random() * height,
                 size: 50 + Math.random() * 100,
                 color: randomColor()
@@ -301,10 +302,7 @@ function checkTrampolineCollision() {
 function update() {
     if (!gameStarted || gameOver) return;
 
-    backgroundX -= backgroundSpeed;
-    if (backgroundX <= -width) {
-        backgroundX = 0;
-    }
+    backgroundX += backgroundSpeed; // now scrolling right for effect
 
     player.vy += player.gravity;
     player.y += player.vy;
@@ -399,7 +397,7 @@ function draw() {
 
     ctx.fillStyle = 'black';
     ctx.font = 'bold 16px sans-serif';
-    ctx.fillText("v1.6.2", width - 80, height - 20);
+    ctx.fillText("v1.6.3", width - 80, height - 20);
 
     if (!gameStarted) {
         ctx.fillStyle = 'black';
