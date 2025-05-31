@@ -51,7 +51,7 @@ const backgroundStartImage = loadImage('assets/background.svg');
 // 🔊 Start Sound
 const startSound = new Audio('assets/start.mp3');
 
-// 📝 Infinite Motivational Quote Generator
+// 📝 Motivational Generator (still here!)
 function generateMotivationalQuote() {
     const verbs = ["Run", "Push", "Jump", "Reach", "Stretch", "Lift", "Dream", "Hustle", "Move", "Shine", "Grow", "Thrive"];
     const goals = ["health", "greatness", "tomorrow", "today", "happiness", "strength", "balance", "clarity"];
@@ -74,12 +74,73 @@ function generateMotivationalQuote() {
     return `${verb} toward ${goal}, ${ending}`;
 }
 
-// Random HEX color generator
+// 🌈 Dynamic Name Generator
+const adjectives = [
+    "Silent", "Golden", "Crimson", "Ancient", "Frozen", "Velvet", "Twilight", "Obsidian", "Sacred", "Endless",
+    "Emerald", "Azure", "Radiant", "Dusky", "Infinite", "Mystic", "Gilded", "Serene", "Verdant", "Nocturnal",
+    "Ivory", "Blazing", "Celestial", "Neon", "Shadowed", "Mirrored", "Wandering", "Glacial", "Whispering", "Thunderous"
+];
+
+const nouns = [
+    "Cove", "Peaks", "Tundra", "Lagoon", "Horizon", "Valley", "Spires", "Archipelago", "Oasis", "Canyon",
+    "Bay", "Dunes", "Cliffs", "Gardens", "Hollow", "Falls", "Isles", "Wastes", "Forest", "Reef",
+    "Terraces", "Plateau", "Savannah", "Delta", "Gorge", "Towers", "Fjords", "Veld", "Plateaus", "Fields"
+];
+
+function generateFakeLocation() {
+    const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
+    const noun = nouns[Math.floor(Math.random() * nouns.length)];
+    return `${adj} ${noun}`;
+}
+
 function randomHexColor() {
     return '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
 }
 
-let backgroundColor = "#f0f8ff";
+// 🖌️ Dynamic Color Palette + Background Blobs
+let levelColors = {};
+let currentLocation = "";
+
+function generateLevelBackground() {
+    levelColors = {
+        sky: randomHexColor(),
+        hill1: randomHexColor(),
+        hill2: randomHexColor(),
+        hill3: randomHexColor()
+    };
+    currentLocation = generateFakeLocation();
+}
+
+function drawBackgroundBlobs() {
+    // Sky
+    ctx.fillStyle = levelColors.sky;
+    ctx.fillRect(0, 0, width, height);
+
+    // Three blob layers (background hills/waves)
+    drawBlobyLayer(levelColors.hill1, 1.5);
+    drawBlobyLayer(levelColors.hill2, 1);
+    drawBlobyLayer(levelColors.hill3, 0.5);
+}
+
+function drawBlobyLayer(color, scale) {
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.moveTo(0, height);
+
+    const hillHeight = height / (3 * scale);
+    const segments = 6 + Math.floor(Math.random() * 5); // random blobbiness
+
+    for (let i = 0; i <= segments; i++) {
+        let x = (i / segments) * width;
+        let variance = Math.random() * 100 - 50;
+        let y = height - hillHeight + variance;
+        ctx.lineTo(x, y);
+    }
+
+    ctx.lineTo(width, height);
+    ctx.closePath();
+    ctx.fill();
+}
 
 let backgroundX = 0;
 let backgroundSpeed = 6;
@@ -94,9 +155,9 @@ const player = {
     gravity: 1.2,
     jumpPower: -18,
     jumpCount: 0,
-    maxJumps: 4, // 🆕 Quadruple jumps
+    maxJumps: 4, 
     frameIndex: 0,
-    frameSpeed: 12, // Start slow
+    frameSpeed: 12, 
     frameCounter: 0,
 };
 
@@ -169,10 +230,9 @@ function spawnBossFood() {
     };
 }
 
-// 🚀 Jump: higher with each jump
 function jump() {
     if (gameStarted && !gameOver && player.jumpCount < player.maxJumps) {
-        const jumpBoost = 1 + (player.jumpCount * 0.2); // 🆙 Each jump gets 20% stronger
+        const jumpBoost = 1 + (player.jumpCount * 0.2);
         player.vy = player.jumpPower * jumpBoost;
         player.jumpCount++;
     }
@@ -205,7 +265,7 @@ function restartGame() {
     gameOver = false;
     randomStartText();
     gameStarted = false;
-    backgroundColor = "#f0f8ff";
+    generateLevelBackground(); // initial level
 }
 
 document.addEventListener('keydown', (e) => {
@@ -271,7 +331,7 @@ function update() {
         bossFood.x -= backgroundSpeed;
         if (detectCollision(player, bossFood)) {
             currentLevel++;
-            backgroundColor = randomHexColor();
+            generateLevelBackground();
             bossFood = null;
             if (player.frameSpeed > 4) {
                 player.frameSpeed -= 0.2;
@@ -338,13 +398,12 @@ function draw() {
     if (!gameStarted) {
         ctx.drawImage(backgroundStartImage, 0, 0, width, height);
     } else {
-        ctx.fillStyle = backgroundColor;
-        ctx.fillRect(0, 0, width, height);
+        drawBackgroundBlobs();
     }
 
     ctx.fillStyle = 'black';
     ctx.font = 'bold 16px sans-serif';
-    ctx.fillText("v1.5.7", width - 80, height - 20);
+    ctx.fillText(`v1.6.0 — ${currentLocation}`, 20, height - 20);
 
     if (!gameStarted) {
         ctx.fillStyle = 'black';
@@ -409,4 +468,5 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 
+generateLevelBackground(); // Initial background
 gameLoop();
