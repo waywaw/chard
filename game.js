@@ -50,8 +50,6 @@ const powerups = [
     loadImage('assets/golden_carrot.svg')
 ];
 
-const backgroundColor = "#f0f8ff";
-
 const quotes = [
     "You can do it! – Richard Simmons",
     "Sweat and Smile!",
@@ -69,6 +67,42 @@ const quotes = [
     "Healthy hustle!",
     "Run like you mean it!",
 ];
+
+// Waves for background
+let waves = [];
+
+function createWaves() {
+    waves = [];
+    for (let i = 0; i < 6; i++) {
+        waves.push({
+            amplitude: 20 + Math.random() * 30,
+            frequency: 0.005 + Math.random() * 0.01,
+            speed: (Math.random() * 0.5 + 0.2) * (Math.random() < 0.5 ? -1 : 1),
+            color: getRandomColor(),
+            offset: Math.random() * Math.PI * 2
+        });
+    }
+}
+
+function getRandomColor() {
+    const hue = Math.floor(Math.random() * 360);
+    return `hsl(${hue}, 80%, 60%)`;
+}
+
+function drawWaveBackground(ctx, time) {
+    ctx.clearRect(0, 0, width, height);
+    waves.forEach(wave => {
+        ctx.beginPath();
+        ctx.moveTo(0, height / 2);
+        for (let x = 0; x <= width; x++) {
+            const y = height / 2 + Math.sin(x * wave.frequency + time * wave.speed + wave.offset) * wave.amplitude;
+            ctx.lineTo(x, y);
+        }
+        ctx.strokeStyle = wave.color;
+        ctx.lineWidth = 3;
+        ctx.stroke();
+    });
+}
 
 let backgroundX = 0;
 let backgroundSpeed = 6;
@@ -133,6 +167,7 @@ function randomStartText() {
 }
 
 randomStartText();
+createWaves(); // Initialize waves at the start
 
 function spawnObstacle() {
     const obs = {
@@ -233,6 +268,7 @@ function restartGame() {
     gameOver = false;
     victoryAchieved = false;
     randomStartText();
+    createWaves(); // Reset the waves too!
     gameStarted = false;
 }
 
@@ -310,7 +346,6 @@ function update() {
         plat.y = plat.baseY + Math.sin(now * plat.waveSpeed + plat.waveOffset) * plat.amplitude;
     });
 
-    // ➡️ Correct collision detection block:
     for (let i = gameObjects.length - 1; i >= 0; i--) {
         const obj = gameObjects[i];
         if (detectCollision(player, obj)) {
@@ -318,11 +353,7 @@ function update() {
                 gameObjects.splice(i, 1);
                 comboCount++;
                 if (comboCount % 5 === 0) {
-                    score += 50;
-                }
-                if (comboCount >= 10 && !rainbowMode) {
-                    rainbowMode = true;
-                    rainbowTimer = 600;
+                    createWaves(); // New colors every 5 fruits!
                 }
                 let points = rainbowMode ? 20 : 10;
                 if (speedBoostMode) points *= 2;
@@ -396,13 +427,11 @@ function update() {
 
 function draw() {
     ctx.clearRect(0, 0, width, height);
-
-    ctx.fillStyle = backgroundColor;
-    ctx.fillRect(0, 0, width, height);
+    drawWaveBackground(ctx, Date.now() / 1000);
 
     ctx.fillStyle = 'black';
     ctx.font = 'bold 16px sans-serif';
-    ctx.fillText("v1.4.2", width - 80, height - 20);
+    ctx.fillText("v1.5.0", width - 80, height - 20);
 
     if (!gameStarted) {
         ctx.fillStyle = 'black';
