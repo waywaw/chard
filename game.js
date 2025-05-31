@@ -1,4 +1,4 @@
-// Chard Runner 2.3 - Build v2.3.0
+// Chard Runner 2.3.1 - Stable Final
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
@@ -60,7 +60,7 @@ const collectibles = [
     loadImage('assets/broccoli.svg')
 ];
 
-// Particle Colors
+// Particle Colors (RGBA with opacity set via globalAlpha)
 const veggieColors = ['#FFA500', '#32CD32', '#FFD700']; // orange, green, gold
 
 // Background Palettes
@@ -363,8 +363,10 @@ function draw() {
     particles.forEach(p => {
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(${hexToRgb(p.color)},${p.opacity})`;
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.opacity;
         ctx.fill();
+        ctx.globalAlpha = 1;
     });
 
     let playerImage = playerRunFrames[player.frameIndex];
@@ -401,16 +403,6 @@ function draw() {
     ctx.textAlign = 'center';
     ctx.fillText('Health Score: ' + score, width / 2, 40);
     ctx.fillText('High Score: ' + highScore, width / 2, 70);
-}
-
-function hexToRgb(hex) {
-    hex = hex.replace(/^#/, '');
-    if (hex.length === 3) hex = hex.split('').map(c => c + c).join('');
-    const bigint = parseInt(hex, 16);
-    const r = (bigint >> 16) & 255;
-    const g = (bigint >> 8) & 255;
-    const b = bigint & 255;
-    return `${r},${g},${b}`;
 }
 
 // Mobile/Desktop Safe Game Loop Start
