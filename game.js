@@ -48,8 +48,15 @@ const bossFoods = [
 
 const backgroundStartImage = loadImage('assets/background.svg');
 
-// 🔊 Start Sound
+// 🔊 Sounds
 const startSound = new Audio('assets/start.mp3');
+const collectSound = new Audio('assets/collect.mp3');
+
+// 🎵 Safe play function
+function playSound(sound) {
+    const clone = sound.cloneNode();
+    clone.play();
+}
 
 // 📝 Infinite Motivational Quote Generator
 function generateMotivationalQuote() {
@@ -291,6 +298,7 @@ function update() {
                 motivationalTimer = 120;
                 backgroundSpeed += 0.05;
                 playerSpeed += 0.05;
+                playSound(collectSound); // 🔊 Play collect sound
             }
         }
     }
@@ -342,7 +350,7 @@ function draw() {
 
     ctx.fillStyle = 'black';
     ctx.font = 'bold 16px sans-serif';
-    ctx.fillText("v1.5.5", width - 80, height - 20);
+    ctx.fillText("v1.5.6", width - 80, height - 20);
 
     if (!gameStarted) {
         ctx.fillStyle = 'black';
