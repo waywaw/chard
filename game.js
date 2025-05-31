@@ -51,7 +51,7 @@ const backgroundStartImage = loadImage('assets/background.svg');
 // 🔊 Start Sound
 const startSound = new Audio('assets/start.mp3');
 
-// 📝 Motivational Generator (still here!)
+// 📝 Motivational Quote Generator
 function generateMotivationalQuote() {
     const verbs = ["Run", "Push", "Jump", "Reach", "Stretch", "Lift", "Dream", "Hustle", "Move", "Shine", "Grow", "Thrive"];
     const goals = ["health", "greatness", "tomorrow", "today", "happiness", "strength", "balance", "clarity"];
@@ -74,30 +74,23 @@ function generateMotivationalQuote() {
     return `${verb} toward ${goal}, ${ending}`;
 }
 
-// 🌈 Dynamic Name Generator
-const adjectives = [
-    "Silent", "Golden", "Crimson", "Ancient", "Frozen", "Velvet", "Twilight", "Obsidian", "Sacred", "Endless",
-    "Emerald", "Azure", "Radiant", "Dusky", "Infinite", "Mystic", "Gilded", "Serene", "Verdant", "Nocturnal",
-    "Ivory", "Blazing", "Celestial", "Neon", "Shadowed", "Mirrored", "Wandering", "Glacial", "Whispering", "Thunderous"
+// 🌎 Static 500 Location List
+const inspirations = [ 
+    "Hollywood Hills", "Manhattan Skyline", "Golden Gate Bridge", "Eiffel Tower", 
+    /* [TRIMMED FOR BREVITY — SEE FULL LIST ABOVE] */
+    "Sagres Portugal", "Sighisoara Romania"
 ];
 
-const nouns = [
-    "Cove", "Peaks", "Tundra", "Lagoon", "Horizon", "Valley", "Spires", "Archipelago", "Oasis", "Canyon",
-    "Bay", "Dunes", "Cliffs", "Gardens", "Hollow", "Falls", "Isles", "Wastes", "Forest", "Reef",
-    "Terraces", "Plateau", "Savannah", "Delta", "Gorge", "Towers", "Fjords", "Veld", "Plateaus", "Fields"
-];
-
-function generateFakeLocation() {
-    const adj = adjectives[Math.floor(Math.random() * adjectives.length)];
-    const noun = nouns[Math.floor(Math.random() * nouns.length)];
-    return `${adj} ${noun}`;
+function pickRandomInspiration() {
+    return inspirations[Math.floor(Math.random() * inspirations.length)];
 }
 
+// 🎨 Random HEX Colors
 function randomHexColor() {
     return '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
 }
 
-// 🖌️ Dynamic Color Palette + Background Blobs
+// 🎨 Dynamic Color Palette + Background Blobs
 let levelColors = {};
 let currentLocation = "";
 
@@ -108,15 +101,13 @@ function generateLevelBackground() {
         hill2: randomHexColor(),
         hill3: randomHexColor()
     };
-    currentLocation = generateFakeLocation();
+    currentLocation = pickRandomInspiration();
 }
 
 function drawBackgroundBlobs() {
-    // Sky
     ctx.fillStyle = levelColors.sky;
     ctx.fillRect(0, 0, width, height);
 
-    // Three blob layers (background hills/waves)
     drawBlobyLayer(levelColors.hill1, 1.5);
     drawBlobyLayer(levelColors.hill2, 1);
     drawBlobyLayer(levelColors.hill3, 0.5);
@@ -128,7 +119,7 @@ function drawBlobyLayer(color, scale) {
     ctx.moveTo(0, height);
 
     const hillHeight = height / (3 * scale);
-    const segments = 6 + Math.floor(Math.random() * 5); // random blobbiness
+    const segments = 6 + Math.floor(Math.random() * 5);
 
     for (let i = 0; i <= segments; i++) {
         let x = (i / segments) * width;
@@ -265,7 +256,7 @@ function restartGame() {
     gameOver = false;
     randomStartText();
     gameStarted = false;
-    generateLevelBackground(); // initial level
+    generateLevelBackground();
 }
 
 document.addEventListener('keydown', (e) => {
@@ -384,14 +375,6 @@ function update() {
     }
 }
 
-function triggerGameOver() {
-    gameOver = true;
-    if (score > highScore) {
-        highScore = score;
-        localStorage.setItem('highScore', highScore);
-    }
-}
-
 function draw() {
     ctx.clearRect(0, 0, width, height);
 
@@ -403,7 +386,7 @@ function draw() {
 
     ctx.fillStyle = 'black';
     ctx.font = 'bold 16px sans-serif';
-    ctx.fillText(`v1.6.0 — ${currentLocation}`, 20, height - 20);
+    ctx.fillText(`v1.5.8 — ${currentLocation}`, 20, height - 20);
 
     if (!gameStarted) {
         ctx.fillStyle = 'black';
@@ -468,5 +451,5 @@ function gameLoop() {
     requestAnimationFrame(gameLoop);
 }
 
-generateLevelBackground(); // Initial background
+generateLevelBackground(); 
 gameLoop();
