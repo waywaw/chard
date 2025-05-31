@@ -94,7 +94,7 @@ const player = {
     gravity: 1.2,
     jumpPower: -18,
     jumpCount: 0,
-    maxJumps: 4, // 🆕 QUADRUPLE jumps!
+    maxJumps: 4, // 🆕 Quadruple jumps
     frameIndex: 0,
     frameSpeed: 12, // Start slow
     frameCounter: 0,
@@ -169,9 +169,11 @@ function spawnBossFood() {
     };
 }
 
+// 🚀 Jump: higher with each jump
 function jump() {
     if (gameStarted && !gameOver && player.jumpCount < player.maxJumps) {
-        player.vy = player.jumpPower;
+        const jumpBoost = 1 + (player.jumpCount * 0.2); // 🆙 Each jump gets 20% stronger
+        player.vy = player.jumpPower * jumpBoost;
         player.jumpCount++;
     }
 }
@@ -342,7 +344,7 @@ function draw() {
 
     ctx.fillStyle = 'black';
     ctx.font = 'bold 16px sans-serif';
-    ctx.fillText("v1.5.6", width - 80, height - 20);
+    ctx.fillText("v1.5.7", width - 80, height - 20);
 
     if (!gameStarted) {
         ctx.fillStyle = 'black';
