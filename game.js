@@ -109,7 +109,7 @@ let highScore = localStorage.getItem('highScore') || 0;
 const parallaxLayers = [];
 const layerSpeeds = [0.2, 0.5, 1.0];
 const shapesPerLayer = 30;
-const levelLength = 10000;
+let levelLength = 10000; // Dynamic now!
 
 function randomColor() {
     const letters = '0123456789ABCDEF';
@@ -120,8 +120,14 @@ function randomColor() {
     return color;
 }
 
+function calculateLevelLength() {
+    // Bigger journey depending on level
+    return (currentLevel * 100) * backgroundSpeed * 60;
+}
+
 function generateParallaxLayers() {
     parallaxLayers.length = 0;
+    levelLength = calculateLevelLength();
     for (let i = 0; i < 3; i++) {
         const layer = [];
         for (let j = 0; j < shapesPerLayer; j++) {
@@ -204,7 +210,7 @@ function startGame() {
     if (!gameStarted) {
         gameStarted = true;
         startSound.play();
-        generateParallaxLayers(); // New parallax for new run
+        generateParallaxLayers();
     } else if (gameOver) {
         restartGame();
     } else {
@@ -312,10 +318,7 @@ function spawnBossFood() {
 function update() {
     if (!gameStarted || gameOver) return;
 
-    backgroundX -= backgroundSpeed;
-    if (backgroundX <= -width) {
-        backgroundX = 0;
-    }
+    backgroundX += backgroundSpeed;
 
     player.vy += player.gravity;
     player.y += player.vy;
@@ -343,7 +346,7 @@ function update() {
         if (detectCollision(player, bossFood)) {
             currentLevel++;
             backgroundColor = randomHexColor();
-            generateParallaxLayers(); // New parallax on level up
+            generateParallaxLayers();
             bossFood = null;
         }
         if (bossFood && bossFood.x + bossFood.width < 0) {
@@ -420,7 +423,7 @@ function draw() {
         
         ctx.fillStyle = 'black';
         ctx.font = `bold ${getResponsiveFontSize(16)}px sans-serif`;
-        ctx.fillText('v1.6.4', width - 60, height - 20); // <<--- VERSION NUMBER
+        ctx.fillText('v1.6.5', width - 60, height - 20); // VERSION NUMBER
         return;
     }
 
