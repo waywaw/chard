@@ -68,210 +68,377 @@ const quotes = [
     "Run like you mean it!",
 ];
 
-// 🌄 Scene management for backgrounds
-let scenes = [];
-let currentScene = null;
+const backgroundColor = "#f0f8ff";
 
-function createScenes() {
-    scenes = [
-        {
-            name: "Desert Highway",
-            palette: ["#ffcc00", "#cc6600", "#663300"],
-            layers: generateDesertLayers()
-        },
-        {
-            name: "City Skyline",
-            palette: ["#0c1445", "#1b1f77", "#3c67c7"],
-            layers: generateCityLayers()
-        },
-        {
-            name: "Beach Horizon",
-            palette: ["#00aaff", "#005577", "#ffddaa"],
-            layers: generateBeachLayers()
-        },
-        {
-            name: "Mountain Plains",
-            palette: ["#88bb88", "#446644", "#224422"],
-            layers: generateMountainLayers()
-        },
-        {
-            name: "Wasteland",
-            palette: ["#777777", "#999999", "#333333"],
-            layers: generateWastelandLayers()
-        }
+let backgroundX = 0;
+let backgroundSpeed = 6;
+let playerSpeed = 2.5;
+const minSpeed = 4;
+
+const player = {
+    x: 50,
+    y: height - 300,
+    width: 200,
+    height: 200,
+    vy: 0,
+    gravity: 1.2,
+    jumpPower: -18,
+    jumpCount: 0,
+    maxJumps: 3,
+    frameIndex: 0,
+    frameSpeed: 5,
+    frameCounter: 0,
+};
+
+let gameObjects = [];
+let trampolines = [];
+let platforms = [];
+
+let gameStarted = false;
+let spawnTimer = 0;
+let trampolineTimer = 0;
+let platformTimer = 0;
+let score = 0;
+let scoreTimer = 0;
+
+let motivationalText = "";
+let motivationalTimer = 0;
+let startText = "";
+
+let comboCount = 0;
+let gameOver = false;
+let highScore = localStorage.getItem('highScore') || 0;
+let victoryAchieved = false;
+
+function randomStartText() {
+    const starts = [
+        "Run for your health.",
+        "Lower blood pressure.",
+        "Lower cholesterol.",
+        "Stay alive. The run never ends.",
+        "Each step is a win.",
+        "Healthy life, happy life.",
+        "Run toward your best self."
     ];
-    pickRandomScene();
+    startText = starts[Math.floor(Math.random() * starts.length)];
 }
 
-function pickRandomScene() {
-    currentScene = scenes[Math.floor(Math.random() * scenes.length)];
+randomStartText();
+
+function spawnObstacle() {
+    const obs = {
+        type: "obstacle",
+        img: obstacles[Math.floor(Math.random() * obstacles.length)],
+        x: width,
+        y: Math.random() * (height - 250) + 200,
+        width: 80 + Math.random() * 20,
+        height: 80 + Math.random() * 20,
+        speed: 6
+    };
+    gameObjects.push(obs);
 }
 
-function getRandom(min, max) {
-    return min + Math.random() * (max - min);
+function spawnCollectible() {
+    const col = {
+        type: "collectible",
+        img: collectibles[Math.floor(Math.random() * collectibles.length)],
+        x: width,
+        y: Math.random() * (height - 250) + 200,
+        width: 80 + Math.random() * 20,
+        height: 80 + Math.random() * 20,
+        speed: 5
+    };
+    gameObjects.push(col);
 }
 
-function generateDesertLayers() {
-    return [
-        { speed: 0.2, elements: generateRectangles(5, 50, 300) },
-        { speed: 0.5, elements: generateTriangles(8, 100, 150) },
-        { speed: 1, elements: generateCacti(10) }
-    ];
+function spawnPowerUp() {
+    const pow = {
+        type: "powerup",
+        img: powerups[0],
+        x: width,
+        y: Math.random() * (height - 250) + 200,
+        width: 60,
+        height: 60,
+        speed: 5
+    };
+    gameObjects.push(pow);
 }
 
-function generateCityLayers() {
-    return [
-        { speed: 0.2, elements: generateRectangles(7, 150, 400) },
-        { speed: 0.5, elements: generateRectangles(10, 100, 300) },
-        { speed: 1, elements: generatePalmTrees(12) }
-    ];
-}
-
-function generateBeachLayers() {
-    return [
-        { speed: 0.2, elements: generateHorizon() },
-        { speed: 0.5, elements: generateWaves(10) }
-    ];
-}
-
-function generateMountainLayers() {
-    return [
-        { speed: 0.2, elements: generateTriangles(6, 200, 400) },
-        { speed: 0.5, elements: generateTriangles(10, 150, 250) }
-    ];
-}
-
-function generateWastelandLayers() {
-    return [
-        { speed: 0.2, elements: generateRectangles(3, 50, 200) },
-        { speed: 0.5, elements: generateBrokenRoad(8) }
-    ];
-}
-
-function generateRectangles(count, minHeight, maxHeight) {
-    const arr = [];
-    for (let i = 0; i < count; i++) {
-        arr.push({
-            type: "rect",
-            x: getRandom(0, width),
-            y: height - getRandom(minHeight, maxHeight),
-            width: 20 + Math.random() * 30,
-            height: getRandom(minHeight, maxHeight)
-        });
-    }
-    return arr;
-}
-
-function generateTriangles(count, minHeight, maxHeight) {
-    const arr = [];
-    for (let i = 0; i < count; i++) {
-        arr.push({
-            type: "tri",
-            x: getRandom(0, width),
-            y: height,
-            width: 40 + Math.random() * 60,
-            height: getRandom(minHeight, maxHeight)
-        });
-    }
-    return arr;
-}
-
-function generateCacti(count) {
-    const arr = [];
-    for (let i = 0; i < count; i++) {
-        arr.push({
-            type: "rect",
-            x: getRandom(0, width),
-            y: height - 100,
-            width: 10,
-            height: 50
-        });
-    }
-    return arr;
-}
-
-function generatePalmTrees(count) {
-    const arr = [];
-    for (let i = 0; i < count; i++) {
-        arr.push({
-            type: "rect",
-            x: getRandom(0, width),
-            y: height - 150,
-            width: 8,
-            height: 100
-        });
-    }
-    return arr;
-}
-
-function generateHorizon() {
-    return [{
-        type: "horizon",
-        x: 0,
+function spawnTrampoline() {
+    trampolines.push({
+        x: width,
         y: height - 100,
-        width: width,
-        height: 10
-    }];
-}
-
-function generateWaves(count) {
-    const arr = [];
-    for (let i = 0; i < count; i++) {
-        arr.push({
-            type: "wave",
-            x: getRandom(0, width),
-            y: height - 90 + Math.sin(i) * 10,
-            width: 100,
-            height: 20
-        });
-    }
-    return arr;
-}
-
-function generateBrokenRoad(count) {
-    const arr = [];
-    for (let i = 0; i < count; i++) {
-        arr.push({
-            type: "rect",
-            x: getRandom(0, width),
-            y: height - 50,
-            width: 100,
-            height: 10
-        });
-    }
-    return arr;
-}
-
-function drawSceneBackground(ctx) {
-    if (!currentScene) return;
-
-    ctx.fillStyle = currentScene.palette[0];
-    ctx.fillRect(0, 0, width, height);
-
-    currentScene.layers.forEach((layer, idx) => {
-        ctx.fillStyle = currentScene.palette[idx % currentScene.palette.length];
-        layer.elements.forEach(element => {
-            ctx.beginPath();
-            if (element.type === "rect") {
-                ctx.fillRect(element.x, element.y, element.width, element.height);
-            } else if (element.type === "tri") {
-                ctx.moveTo(element.x, element.y);
-                ctx.lineTo(element.x + element.width / 2, element.y - element.height);
-                ctx.lineTo(element.x + element.width, element.y);
-                ctx.closePath();
-                ctx.fill();
-            } else if (element.type === "horizon") {
-                ctx.fillRect(element.x, element.y, element.width, element.height);
-            } else if (element.type === "wave") {
-                ctx.arc(element.x, element.y, 20, 0, Math.PI * 2);
-                ctx.fill();
-            }
-            element.x -= layer.speed * backgroundSpeed;
-            if (element.x + element.width < 0) {
-                element.x = width + Math.random() * 300;
-            }
-        });
+        width: 100,
+        height: 30
     });
 }
 
-// --- Game Core Variables (coming next)
+function spawnPlatform() {
+    platforms.push({
+        x: width,
+        baseY: Math.random() * (height * 0.7),
+        y: 0,
+        width: 80 + Math.random() * 100,
+        height: 20 + Math.random() * 20,
+        amplitude: 30 + Math.random() * 20,
+        waveSpeed: 0.5 + Math.random(),
+        waveOffset: Math.random() * Math.PI * 2
+    });
+}
+
+function jump() {
+    if (gameStarted && !gameOver && player.jumpCount < player.maxJumps) {
+        player.vy = player.jumpPower;
+        player.jumpCount++;
+    }
+}
+
+function startGame() {
+    if (!gameStarted) {
+        gameStarted = true;
+    } else if (gameOver) {
+        restartGame();
+    } else {
+        jump();
+    }
+}
+
+function restartGame() {
+    backgroundSpeed = 6;
+    playerSpeed = 2.5;
+    score = 0;
+    scoreTimer = 0;
+    spawnTimer = 0;
+    trampolineTimer = 0;
+    platformTimer = 0;
+    comboCount = 0;
+    gameObjects = [];
+    trampolines = [];
+    platforms = [];
+    gameOver = false;
+    victoryAchieved = false;
+    randomStartText();
+    gameStarted = false;
+}
+
+document.addEventListener('keydown', (e) => {
+    if (e.code === 'Space') {
+        startGame();
+    }
+});
+
+document.addEventListener('touchstart', () => {
+    startGame();
+});
+
+document.addEventListener('mousedown', () => {
+    startGame();
+});
+
+function detectCollision(a, b) {
+    return a.x < b.x + b.width &&
+           a.x + a.width > b.x &&
+           a.y < b.y + b.height &&
+           a.y + a.height > b.y;
+}
+
+function checkTrampolineCollision() {
+    trampolines.forEach(tramp => {
+        if (detectCollision(player, tramp) && player.vy >= 0) {
+            player.vy = player.jumpPower * 1.5;
+            player.jumpCount = 0;
+        }
+    });
+}
+
+function checkPlatformCollision() {
+    platforms.forEach(plat => {
+        if (detectCollision(player, plat) && player.vy >= 0) {
+            player.vy = 0;
+            player.y = plat.y - player.height;
+            player.jumpCount = 0;
+        }
+    });
+}
+
+function update() {
+    if (!gameStarted || gameOver) return;
+
+    backgroundX -= backgroundSpeed;
+    if (backgroundX <= -width) {
+        backgroundX = 0;
+    }
+
+    player.vy += player.gravity;
+    player.y += player.vy;
+
+    if (player.y + player.height > height - 50) {
+        player.y = height - 50 - player.height;
+        player.vy = 0;
+        player.jumpCount = 0;
+    }
+
+    checkTrampolineCollision();
+    checkPlatformCollision();
+
+    gameObjects.forEach(obj => {
+        obj.x -= obj.speed;
+    });
+
+    trampolines.forEach(tramp => {
+        tramp.x -= backgroundSpeed;
+    });
+
+    let now = Date.now() / 1000;
+    platforms.forEach(plat => {
+        plat.x -= backgroundSpeed;
+        plat.y = plat.baseY + Math.sin(now * plat.waveSpeed + plat.waveOffset) * plat.amplitude;
+    });
+
+    for (let i = gameObjects.length - 1; i >= 0; i--) {
+        const obj = gameObjects[i];
+        if (detectCollision(player, obj)) {
+            if (obj.type === "collectible") {
+                gameObjects.splice(i, 1);
+                comboCount++;
+                let points = 10;
+                score += points;
+                motivationalText = quotes[Math.floor(Math.random() * quotes.length)];
+                motivationalTimer = 120;
+                backgroundSpeed += 0.5;
+                playerSpeed += 0.3;
+            } else if (obj.type === "obstacle") {
+                gameObjects.splice(i, 1);
+                comboCount = 0;
+                score = Math.max(0, score - 5);
+                backgroundSpeed -= 1;
+                playerSpeed -= 0.5;
+                if (backgroundSpeed < minSpeed) {
+                    triggerGameOver();
+                }
+            } else if (obj.type === "powerup") {
+                gameObjects.splice(i, 1);
+            }
+        }
+    }
+
+    gameObjects = gameObjects.filter(obj => obj.x + obj.width > 0);
+    trampolines = trampolines.filter(tramp => tramp.x + tramp.width > 0);
+    platforms = platforms.filter(plat => plat.x + plat.width > 0);
+
+    spawnTimer++;
+    if (spawnTimer % 50 === 0) {
+        if (Math.random() < 0.7) {
+            spawnCollectible();
+        } else if (Math.random() < 0.2) {
+            spawnPowerUp();
+        } else {
+            spawnObstacle();
+        }
+    }
+
+    trampolineTimer++;
+    if (trampolineTimer % 300 === 0) {
+        spawnTrampoline();
+    }
+
+    platformTimer++;
+    if (platformTimer % 200 === 0) {
+        spawnPlatform();
+    }
+
+    scoreTimer++;
+    if (scoreTimer % 60 === 0) {
+        score++;
+    }
+
+    if (motivationalTimer > 0) {
+        motivationalTimer--;
+    }
+}
+
+function triggerGameOver() {
+    gameOver = true;
+    if (score > highScore) {
+        highScore = score;
+        localStorage.setItem('highScore', highScore);
+    }
+    if (score >= 1000) {
+        victoryAchieved = true;
+    }
+}
+
+function draw() {
+    ctx.clearRect(0, 0, width, height);
+
+    ctx.fillStyle = backgroundColor;
+    ctx.fillRect(0, 0, width, height);
+
+    ctx.fillStyle = 'black';
+    ctx.font = 'bold 16px sans-serif';
+    ctx.fillText("v1.4.2", width - 80, height - 20);
+
+    if (!gameStarted) {
+        ctx.fillStyle = 'black';
+        ctx.font = 'bold 28px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(startText, width / 2, height / 2);
+
+        ctx.drawImage(playerIdle, width / 2 - 100, height - 300, 200, 200);
+
+        ctx.fillStyle = 'darkgreen';
+        ctx.font = 'bold 32px sans-serif';
+        ctx.fillText('Tap to Start', width / 2, height / 2 + 150);
+        return;
+    }
+
+    trampolines.forEach(tramp => {
+        ctx.fillStyle = 'blue';
+        ctx.fillRect(tramp.x, tramp.y, tramp.width, tramp.height);
+    });
+
+    platforms.forEach(plat => {
+        ctx.fillStyle = 'gray';
+        ctx.fillRect(plat.x, plat.y, plat.width, plat.height);
+    });
+
+    let playerImage;
+    if (player.vy < 0) {
+        playerImage = playerJumpMid;
+    } else if (player.vy > 0 && player.jumpCount > 0) {
+        playerImage = playerJumpFall;
+    } else {
+        player.frameCounter += playerSpeed;
+        if (player.frameCounter >= player.frameSpeed) {
+            player.frameIndex = (player.frameIndex + 1) % playerRunFrames.length;
+            player.frameCounter = 0;
+        }
+        playerImage = playerRunFrames[player.frameIndex];
+    }
+
+    ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
+
+    gameObjects.forEach(obj => {
+        ctx.drawImage(obj.img, obj.x, obj.y, obj.width, obj.height);
+    });
+
+    ctx.fillStyle = 'black';
+    ctx.font = 'bold 24px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Health Score: ' + score, width / 2, 40);
+    ctx.fillText('High Score: ' + highScore, width / 2, 70);
+
+    if (motivationalTimer > 0) {
+        ctx.fillStyle = 'blue';
+        ctx.font = 'bold 28px sans-serif';
+        ctx.fillText(motivationalText, width / 2, height / 2 - 100);
+    }
+}
+
+function gameLoop() {
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
