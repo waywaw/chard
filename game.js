@@ -14,7 +14,7 @@ window.addEventListener('resize', () => {
 });
 
 // Version display
-const version = "v1.3.6";
+const version = "v1.3.7";
 
 // Load Images
 const loadImage = (src) => {
@@ -97,21 +97,6 @@ const player = {
 };
 
 let gameObjects = [];
-let platforms = [];
-
-function createPlatforms() {
-    platforms = [];
-    for (let i = 0; i < 5; i++) {
-        platforms.push({
-            x: 300 + i * 600,
-            y: Math.random() * (height - 400) + 200,
-            width: 150,
-            height: 20,
-        });
-    }
-}
-
-createPlatforms();
 
 let gameStarted = false;
 let spawnTimer = 0;
@@ -225,7 +210,6 @@ function restartGame() {
     victoryAchieved = false;
     randomStartText();
     backgroundColor = backgroundColors[Math.floor(Math.random() * backgroundColors.length)];
-    createPlatforms();
     player.y = height - 300;
     player.vy = 0;
     player.jumpCount = 0;
@@ -253,20 +237,6 @@ function detectCollision(a, b) {
            a.y + a.height > b.y;
 }
 
-function checkPlatformCollision() {
-    for (let plat of platforms) {
-        if (player.vy > 0 && 
-            player.x + player.width > plat.x &&
-            player.x < plat.x + plat.width &&
-            player.y + player.height <= plat.y + 10 &&
-            player.y + player.height + player.vy >= plat.y) {
-            player.y = plat.y - player.height;
-            player.vy = 0;
-            player.jumpCount = 0;
-        }
-    }
-}
-
 function update() {
     if (!gameStarted || gameOver) return;
 
@@ -284,22 +254,66 @@ function update() {
         player.jumpCount = 0;
     }
 
-    checkPlatformCollision();
-
     gameObjects.forEach(obj => {
         obj.x -= obj.speed;
     });
 
-    platforms.forEach(plat => {
-        plat.x -= backgroundSpeed;
-    });
+    for (let i = gameObjects.length - 1; i >= 0; i--) {
+        const obj = gameObjects[i];
 
-    // ✅ Remove old objects
-    gameObjects = gameObjects.filter(obj => obj.x + obj.width > 0);
-    platforms = platforms.filter(plat => plat.x + plat.width > 0);
+        if (obj.x + obj.width < 0) {
+            gameObjects.splice(i, 1);
+            continue;
+        }
+
+        if (detectCollision(player, obj)) {
+            if (obj.type === "collectible") {
+                gameObjects.splice(i, 1);
+                comboCount++;
+                if (comboCount % 5 === 0) {
+                    score += 50;
+                }
+                if (comboCount >= 10 && !rainbowMode) {
+                    rainbowMode = true;
+                    rainbowTimer = 600;
+                }
+                let points = rainbowMode ? 20 : 10;
+                if (speedBoostMode) points *= 2;
+                score += points;
+                motivationalText = quotes[Math.floor(Math.random() * quotes.length)];
+                motivationalTimer = 120;
+                backgroundSpeed += 0.5;
+                playerSpeed += 0.3;
+            } else if (obj.type === "obstacle") {
+                gameObjects.splice(i, 1);
+                comboCount = 0;
+                rainbowMode = false;
+                rainbowTimer = 0;
+                magnetMode = false;
+                magnetTimer = 0;
+                speedBoostMode = false;
+                speedBoostTimer = 0;
+                score = Math.max(0, score - 5);
+                backgroundSpeed -= 1;
+                playerSpeed -= 0.5;
+                if (backgroundSpeed < minSpeed) {
+                    triggerGameOver();
+                }
+            } else if (obj.type === "powerup") {
+                gameObjects.splice(i, 1);
+                if (Math.random() < 0.5) {
+                    magnetMode = true;
+                    magnetTimer = 600;
+                } else {
+                    speedBoostMode = true;
+                    speedBoostTimer = 300;
+                }
+            }
+        }
+    }
 
     spawnTimer++;
-    if (spawnTimer % 50 === 0) {
+    if (spawnTimer % 50 === 0) { // ← Slower spawn: was 30, now 50
         if (Math.random() < 0.7) {
             spawnCollectible();
         } else if (Math.random() < 0.2) {
@@ -407,11 +421,6 @@ function draw() {
 
     ctx.drawImage(playerImage, player.x, player.y, player.width, player.height);
 
-    platforms.forEach(plat => {
-        ctx.fillStyle = 'brown';
-        ctx.fillRect(plat.x, plat.y, plat.width, plat.height);
-    });
-
     gameObjects.forEach(obj => {
         ctx.drawImage(obj.img, obj.x, obj.y, obj.width, obj.height);
     });
@@ -459,7 +468,7 @@ function draw() {
         if (victoryAchieved) {
             ctx.fillStyle = 'green';
             ctx.font = 'bold 32px sans-serif';
-            ctx.fillText('You lowered your cholesterol by 20%!", width / 2, height / 2 + 60);
+            ctx.fillText('You lowered your cholesterol by 20%!', width / 2, height / 2 + 60);
         }
         ctx.fillStyle = 'black';
         ctx.font = 'bold 24px sans-serif';
