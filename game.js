@@ -13,6 +13,9 @@ window.addEventListener('resize', () => {
     canvas.height = height;
 });
 
+// Version display
+const version = "v1.3.1";
+
 // Load Images
 const loadImage = (src) => {
     const img = new Image();
@@ -61,16 +64,15 @@ const powerups = [
     loadImage('assets/golden_carrot.svg')
 ];
 
-// Random background colors
 const backgroundColors = [
-    '#FFD700', // Gold
-    '#ADFF2F', // Green Yellow
-    '#FF69B4', // Hot Pink
-    '#87CEEB', // Sky Blue
-    '#FF7F50', // Coral
-    '#DA70D6', // Orchid
-    '#98FB98', // Pale Green
-    '#FFA07A'  // Light Salmon
+    '#FFD700',
+    '#ADFF2F',
+    '#FF69B4',
+    '#87CEEB',
+    '#FF7F50',
+    '#DA70D6',
+    '#98FB98',
+    '#FFA07A'
 ];
 
 let backgroundColor = backgroundColors[Math.floor(Math.random() * backgroundColors.length)];
@@ -405,6 +407,11 @@ function draw() {
         ctx.fillStyle = backgroundColor;
         ctx.fillRect(0, 0, width, height);
     }
+
+    // VERSION TEXT
+    ctx.fillStyle = 'black';
+    ctx.font = 'bold 16px sans-serif';
+    ctx.fillText(version, width - 80, height - 20);
 
     if (!gameStarted) {
         ctx.fillStyle = 'black';
